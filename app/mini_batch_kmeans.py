@@ -82,13 +82,14 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(min(k * 100, data_size * 0.2)) if args.rounds == 0 else args.rounds
-        batch = 512 if args.batch == 0 else args.batch
+        rounds = math.ceil(k * 400) if args.rounds == 0 else args.rounds
+        batch = math.ceil(data_size * 0.04) if args.batch == 0 else args.batch
         print(
             f'params:\n'
             f'  clusters: {k}\n'
             f'  rounds: {rounds}\n'
             f'  tolerance: {args.tol}\n'
+            f'  batch size: {batch}\n'
         )
         kmeans = MiniBatchKMeans(
             n_clusters=k,
@@ -105,7 +106,7 @@ if __name__ == '__main__':
             labels = get_labels(data, centers)
             ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
             ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'unnormlized', k, rounds, args.tol, batch, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+            result.loc[(dataset, model_name, 'unnormlized', k, rounds, batch,args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
             result.to_excel(result_dir / file_name)
         data = np.load(dataset_dir/f'{model_name}' / f'norm_embedding.npy')
         print(f'Running on dataset(normalized): {dataset}')
@@ -118,5 +119,5 @@ if __name__ == '__main__':
             labels = get_labels(data, centers)
             ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
             ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'normalized', k, rounds, args.tol, batch, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+            result.loc[(dataset, model_name, 'normalized', k, rounds, batch,args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
             result.to_excel(result_dir / file_name)

@@ -88,10 +88,10 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(min(k * 25, data_size * 0.2)) if args.rounds == 0 else args.rounds
-        trans = 20 if args.trans == 0 else args.trans
-        batch = 1024 if args.batch == 0 else args.batch
-        total_batch = 10 if args.total_batch == 0 else args.total_batch
+        rounds = math.ceil(k * 50) if args.rounds == 0 else args.rounds
+        trans = math.ceil(math.sqrt(k*50)) if args.trans == 0 else args.trans
+        batch = math.ceil(0.04*data_size) if args.batch == 0 else args.batch
+        total_batch = 8 if args.total_batch == 0 else args.total_batch
         minibatch_rounds = 40 if args.minibatch_rounds == 0 else args.minibatch_rounds
         print(
             f'params:\n'
