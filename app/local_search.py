@@ -112,9 +112,10 @@ class LocalSearch(object):
             centers (n_clusters, n_features): 最终中心点
         """
         sample_size = x.shape[0]
-        for _ in range(self.rounds_):
+        points = sample(x,self.rounds_)
+        for i in range(self.rounds_):
             # 获取下一个样本点
-            next_point = sample(x, 1)
+            next_point = points[i]
             # 计算样本点到中心点的距离平方
             x_distance_with_centers = l2_distance(next_point, centers)
             # 找到最小距离
@@ -122,22 +123,24 @@ class LocalSearch(object):
             # 如果最小距离为0，则跳过
             if x_min_distance == 0:
                 continue
-            for step in range(0, self.trans_):
-                y_point = sample(x, 1)
-                y_distance_with_centers = l2_distance(y_point, centers)
-
-                y_min_distance = np.min(y_distance_with_centers)
-                if x_min_distance == 0:
-                    x_min_distance = 0.01
-                rand_value = np.random.randn()
-                if y_min_distance / x_min_distance > rand_value:
+            trans_points = sample(x, self.trans_)
+            trans_points_distance_with_centers = l2_distance(trans_points, centers)
+            trans_min_distance = np.min(trans_points_distance_with_centers, axis=1)
+            for step in range(self.trans_):
+                y_point = trans_points[step]
+                y_min_distance = trans_min_distance[step]
+                if y_min_distance < 1e-9:
+                    continue
+                delta = y_min_distance - x_min_distance
+                if delta<0 or np.exp(-delta) > np.random.rand():
                     x_min_distance = y_min_distance
-                    x_distance_with_centers = y_distance_with_centers
+                    x_distance_with_centers = trans_points_distance_with_centers[step]
                     next_point = y_point
 
             next_center_index = np.argmin(x_distance_with_centers)
-            next_random_center_index = sample(np.array([i for i in range(self.n_clusters_) if i != next_center_index]),
-                                              1)
+            exclude_mask = np.ones(self.n_clusters_, dtype=bool)
+            exclude_mask[next_center_index] = False
+            next_random_center_index = np.random.choice(np.arange(self.n_clusters_)[exclude_mask])
             # 已经被使用的数量
             used_count = 0
             # 总共需要使用的数量
@@ -196,19 +199,14 @@ class LocalSearch(object):
                 flag = 1
                 used_count += self.batch_
                 # UCB淘汰策略：保留"可能最优"的交换对
-                mean_current = s_mean[solution_np]  # 当前候选的平均收益
-                std_current = s_std[solution_np]  # 置信区间宽度
-
-                mean_plus_std = mean_current + std_current  # UCB上界
-                target_min = min(mean_plus_std)
+                target_min = np.min(s_mean[solution_np]+s_std[solution_np])
 
                 target_min = min(target_min, 0)
 
-                target_diff = (mean_current - std_current)  # UCB下界
+                target_diff = s_mean[solution_np] - s_std[solution_np]  # UCB下界
 
                 # 淘汰：如果一个交换对的下界 > 其他交换对的上界，则它肯定不是最优
-                remain_index = np.argwhere(target_diff <= target_min)[:, 0]
-                solution = [solution[remain_index[k]] for k in range(len(remain_index))]
+                solution = solution_np[target_diff <= target_min].tolist()
 
             if target_min == 0:
                 continue
