@@ -1,0 +1,13 @@
+.lingma
+.pytest_cache/
+__pycache__/
+data/
+dependency/
+result/
+processed_data/
+*.log
+.csv
+.txt
+.xlsx
+*temp/
+temp*.*
