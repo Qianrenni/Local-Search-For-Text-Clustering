@@ -7,9 +7,9 @@ import json
 
 import pandas as pd
 from datetime import datetime
-from app.local_search import LocalSearch
+from sklearn.cluster import KMeans
 from app.eval import ClusterEvaluator
-from app.util import cost,sample,get_labels
+from app.util import cost,get_labels
 import time
 from tqdm import tqdm
 def _args():
@@ -18,10 +18,7 @@ def _args():
     parser.add_argument('-d', '--dataset', type=str, default='ag_news', help='Dataset name')
     parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
     parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
-    parser.add_argument('-t', '--trans', type=int, default=0, help='Number of transformations')
-    parser.add_argument('-b', '--batch', type=int, default=0, help='Batch size')
-    parser.add_argument('-tb', '--total_batch', type=int, default=0, help='Total batch size')
-    parser.add_argument('-mbr', '--minibatch_rounds', type=int, default=0, help='Minibatch rounds')
+    parser.add_argument('-t','--tol', type=float, default=0.0001, help='Tolerance for convergence')
     args = parser.parse_args()
     return args
 if __name__ == '__main__':
@@ -40,10 +37,7 @@ if __name__ == '__main__':
                 'norm',
                 'clusters',
                 'rounds',
-                'trans',
-                'batch',
-                'total_batch',
-                'minibatch_rounds',
+                'tol',
                 'iteration',
                 'ARI',
                 'NMI',
@@ -64,15 +58,12 @@ if __name__ == '__main__':
                 'norm', 
                 'clusters', 
                 'rounds', 
-                'trans', 
-                'batch', 
-                'total_batch',
-                'minibatch_rounds',
+                'tol',
                 'iteration'
             ],
             inplace=True
         )
-    result_dir = SETTING.RESULT / dataset_name/'local_search'
+    result_dir = SETTING.RESULT / dataset_name/'kmeans'
     result_dir.mkdir(parents=True, exist_ok=True)
     file_name = f'{datetime.now().strftime("%Y_%m_%d_%H_%M")}.xlsx'
 
@@ -88,49 +79,39 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(min(k * 25, data_size * 0.2)) if args.rounds == 0 else args.rounds
-        trans = 20 if args.trans == 0 else args.trans
-        batch = 1024 if args.batch == 0 else args.batch
-        total_batch = 10 if args.total_batch == 0 else args.total_batch
-        minibatch_rounds = 40 if args.minibatch_rounds == 0 else args.minibatch_rounds
+        rounds = math.ceil(min(k * 100, data_size * 0.2)) if args.rounds == 0 else args.rounds
         print(
             f'params:\n'
             f'  clusters: {k}\n'
             f'  rounds: {rounds}\n'
-            f'  trans: {trans}\n'
-            f'  batch: {batch}\n'
-            f'  total_batch: {total_batch}\n'
-            f'  minibatch_rounds: {minibatch_rounds}\n'
+            f'  tolerance: {args.tol}\n'
         )
-        local_search = LocalSearch(
+        kmeans = KMeans(
             n_clusters=k,
-            rounds=rounds,
-            trans=trans,
-            batch=batch,
-            total_batch=total_batch,
-            minibatchround=minibatch_rounds
+            max_iter=rounds,
+            tol=args.tol,
         )
         for index in tqdm(range(iteration), desc=f'iteration'):
             start_time = time.time()
-            centers = sample(data, k)
-            centers = local_search.local_search_bandit(data, centers)
+            kmeans.fit(data)
+            centers = kmeans.cluster_centers_
             total_time = time.time() - start_time
             loss = cost(data, centers)
             labels = get_labels(data, centers)
             ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
             ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'unnormlized', k, rounds, trans, batch, total_batch, minibatch_rounds, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+            result.loc[(dataset, model_name, 'unnormlized', k, rounds, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
             result.to_excel(result_dir / file_name)
         data = np.load(dataset_dir/f'{model_name}' / f'norm_embedding.npy')
         print(f'Running on dataset(normalized): {dataset}')
         for index in tqdm(range(iteration), desc=f'iteration'):
             start_time = time.time()
-            centers = sample(data, k)
-            centers = local_search.local_search_bandit(data, centers)
+            kmeans.fit(data)
+            centers = kmeans.cluster_centers_
             total_time = time.time() - start_time
             loss = cost(data, centers)
             labels = get_labels(data, centers)
             ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
             ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'normalized', k, rounds, trans, batch, total_batch, minibatch_rounds, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+            result.loc[(dataset, model_name, 'normalized', k, rounds, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
             result.to_excel(result_dir / file_name)
