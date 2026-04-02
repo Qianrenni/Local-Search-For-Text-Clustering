@@ -57,9 +57,18 @@ def output_embedding(
     with open(result_dir/'labels.json', 'w') as f:
         json.dump(labels, f, ensure_ascii=False, indent=4)
 
+def _args():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-m','--model_name', type=str, default='all_minilm_l6')
+    parser.add_argument('-d','--dataset_name', type=str, default='ag_news')
+    parser.add_argument('-b','--batch_size', type=int, default=64)
+    args = parser.parse_args()
+    return args
 if __name__ == '__main__':
-
+    args = _args()
     output_embedding(
-        model_name='all_minilm_l6',
-        dataset_name='20_newsgroups',
+        model_name=args.model_name,
+        dataset_name=args.dataset_name,
+        batch_size=args.batch_size
     )

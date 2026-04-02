@@ -4,7 +4,7 @@ import torch
 import random
 import math
 import json
-from app.args import args
+
 import pandas as pd
 from datetime import datetime
 from app.local_search import LocalSearch
@@ -12,11 +12,24 @@ from app.eval import ClusterEvaluator
 from app.util import cost,sample,get_labels
 import time
 from tqdm import tqdm
+def _args():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='ag_news', help='Dataset name')
+    parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
+    parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
+    parser.add_argument('-t', '--trans', type=int, default=0, help='Number of transformations')
+    parser.add_argument('-b', '--batch', type=int, default=0, help='Batch size')
+    parser.add_argument('-tb', '--total_batch', type=int, default=0, help='Total batch size')
+    parser.add_argument('-mbr', '--minibatch_rounds', type=int, default=0, help='Minibatch rounds')
+    args = parser.parse_args()
+    return args
 if __name__ == '__main__':
     np.random.seed(SETTING.SEED)
     random.seed(SETTING.SEED)
     torch.manual_seed(SETTING.SEED)
     torch.cuda.manual_seed(SETTING.SEED)
+    args = _args()
     dataset_name:str = args.dataset
     dataset_dir =SETTING.PROCESS_DATA / f'{dataset_name}' 
     iteration = args.iteration
@@ -75,11 +88,11 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(min(k * 100, data_size * 0.2))
-        trans = 64
-        batch = 512
-        total_batch = math.ceil((data_size >> 1) / batch)
-        minibatch_rounds = 40
+        rounds = math.ceil(min(k * 100, data_size * 0.2)) if args.rounds == 0 else args.rounds
+        trans = 64 if args.trans == 0 else args.trans
+        batch = 512 if args.batch == 0 else args.batch
+        total_batch = math.ceil((data_size >> 1) / batch) if args.total_batch == 0 else args.total_batch
+        minibatch_rounds = 40 if args.minibatch_rounds == 0 else args.minibatch_rounds
         print(
             f'params:\n'
             f'  clusters: {k}\n'
