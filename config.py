@@ -5,6 +5,7 @@ class SETTING:
     RESULT=ROOT/'result'
     DATA=ROOT/'data'
     PROCESS_DATA = ROOT/'processed_data'
+    DEPENDENCY=ROOT/'dependency'
 
 for key in dir(SETTING):
     value = getattr(SETTING,key)
