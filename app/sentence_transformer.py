@@ -1,23 +1,30 @@
 from sentence_transformers import SentenceTransformer
 from typing import Literal
-sentence_transformer_path = r'D:\graduate_design\code\dependency\sentence-transformers\all-MiniLM-L6-v2'
-gte_path = r'D:\graduate_design\code\dependency\gte_sentence-embedding_multilingual-base'
+from config import SETTING
+sentence_transformer_path = SETTING.DEPENDENCY/'sentence-transformers'
 
 def get_sentence_transformer(
-        path:Literal['gte','all_minilm_l6']='all_minilm_l6',
+        model_name:Literal[
+            'all-MiniLM-L12-v2',
+            'all-MiniLM-L6-v2',
+            'all-mpnet-base-v2',
+            'clip-ViT-B-32-multilingual-v1',
+            'paraphrase-multilingual-MiniLM-L12-v2'
+            ]='all-MiniLM-L6-v2',
         device=None
     ):
-    p = {
-        'gte':gte_path,
-        'all_minilm_l6':sentence_transformer_path
-    }
-    model = SentenceTransformer(p.get(path),device=device)
+    model = SentenceTransformer(str(sentence_transformer_path/model_name),device=device)
     return model
+
 
 if __name__ == '__main__':
     import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = get_sentence_transformer(path='qwen3_06B',device=device)
+    import numpy as np
+    model1 = get_sentence_transformer('all-MiniLM-L12-v2',device=device)
+    model2 = get_sentence_transformer('all-MiniLM-L6-v2',device=device)
     texts= ['heloo']
-    codes = model.encode(texts)
-    print(codes.shape)
+    codes1 = model1.encode(texts)
+    codes2 = model2.encode(texts)
+    print(np.allclose(codes1,codes2))
+    print(codes1.shape,codes2.shape)

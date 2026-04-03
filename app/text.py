@@ -35,7 +35,7 @@ def output_embedding(
     """
     import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = get_sentence_transformer(path=model_name,device=device)
+    model = get_sentence_transformer(model_name=model_name,device=device)
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
     result_dir.mkdir(parents=True, exist_ok=True)
     train, labels = get_text_cluster_data(dataset_name)
@@ -60,15 +60,22 @@ def output_embedding(
 def _args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('-m','--model_name', type=str, default='all_minilm_l6')
     parser.add_argument('-d','--dataset_name', type=str, default='ag_news')
     parser.add_argument('-b','--batch_size', type=int, default=64)
     args = parser.parse_args()
     return args
 if __name__ == '__main__':
     args = _args()
-    output_embedding(
-        model_name=args.model_name,
-        dataset_name=args.dataset_name,
-        batch_size=args.batch_size
-    )
+    model_names = [
+            'all-MiniLM-L12-v2',
+            'all-MiniLM-L6-v2',
+            'all-mpnet-base-v2',
+            'clip-ViT-B-32-multilingual-v1',
+            'paraphrase-multilingual-MiniLM-L12-v2'
+            ]
+    for model_name in model_names:
+        output_embedding(
+            model_name=model_name,
+            dataset_name=args.dataset_name,
+            batch_size=args.batch_size
+        )
