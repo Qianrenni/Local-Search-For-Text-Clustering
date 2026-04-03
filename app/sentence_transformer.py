@@ -1,14 +1,14 @@
 from sentence_transformers import SentenceTransformer
 from typing import Literal
 sentence_transformer_path = r'D:\graduate_design\code\dependency\sentence-transformers\all-MiniLM-L6-v2'
-qwen3_embedding_06B_path = r'D:\graduate_design\code\dependency\Qwen3-Embedding-06B'
+gte_path = r'D:\graduate_design\code\dependency\gte_sentence-embedding_multilingual-base'
 
 def get_sentence_transformer(
-        path:Literal['qwen3_06B','all_minilm_l6']='all_minilm_l6',
+        path:Literal['gte','all_minilm_l6']='all_minilm_l6',
         device=None
     ):
     p = {
-        'qwen3_06B':qwen3_embedding_06B_path,
+        'gte':gte_path,
         'all_minilm_l6':sentence_transformer_path
     }
     model = SentenceTransformer(p.get(path),device=device)

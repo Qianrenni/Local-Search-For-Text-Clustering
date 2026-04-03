@@ -38,8 +38,8 @@ def sample(
     """
     if size > len(sequence):
         raise ValueError("size must be less than or equal to the length of sequence")
-
-    result = sequence[np.random.randint(0, len(sequence), size, dtype=int)]
+    indices = np.random.choice(sequence.shape[0],size=size,replace=False)
+    result =sequence[indices]
     return result.squeeze()
 
 
