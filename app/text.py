@@ -38,6 +38,7 @@ def output_embedding(
     import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
+    max_length=model.max_seq_length
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
     if result_dir.exists():
         print(f'{result_dir} already exists')
