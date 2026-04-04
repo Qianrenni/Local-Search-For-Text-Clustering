@@ -37,7 +37,9 @@ def sample(
         np.ndarray: 采样结果
     """
     if size > len(sequence):
-        raise ValueError("size must be less than or equal to the length of sequence")
+        indices = np.random.choice(sequence.shape[0], size=size, replace=True)
+        result = sequence[indices]
+        return result.squeeze()
     indices = np.random.choice(sequence.shape[0],size=size,replace=False)
     result =sequence[indices]
     return result.squeeze()

@@ -11,9 +11,11 @@ def get_text_cluster_data(dataset_name: str):
         dataset_name (str): 数据集名称
     """
     dataset_path = SETTING.DATA/f'{dataset_name}'/'train.xlsx'
-    df = pd.read_excel(
-        dataset_path
-    )
+    if not dataset_path.exists():
+        dataset_path = SETTING.DATA/f'{dataset_name}'/'train.json'
+        df = pd.read_json(dataset_path)
+    else:
+        df = pd.read_excel(dataset_path)
     classes = {label: i for i, label in enumerate(df['label'].unique())}
     labels = [None for _ in range(len(classes))]
     for label, i in classes.items():

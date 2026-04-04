@@ -122,3 +122,13 @@ if __name__ == '__main__':
             ch, db = ClusterEvaluator.internal_metrics(data, labels)
             result.loc[(dataset, model_name, 'normalized', k, rounds, batch,args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
             result.to_excel(result_dir / file_name)
+    result.reset_index(inplace=True)
+    arrgregate_df = result.groupby(['dataset',
+                                    'model',
+                                    'norm',
+                                    'clusters',
+                                    'rounds',
+                                    'batch',
+                                    'tol',
+                                ]).agg(['mean', 'std']).reset_index()
+    arrgregate_df.to_excel(result_dir / f'aggregate_{file_name}')
