@@ -22,7 +22,8 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     import numpy as np
     model = get_sentence_transformer('all-MiniLM-L6-v2',device=device)
-    texts= ['我喜欢你','你爱我吗']
+    texts= ['我喜欢你,你爱我吗','我喜欢你c','你爱我吗']
     codes = model.encode(texts)
+    temp = codes[1:].mean(axis=0)
     print(codes.shape)
-    print(model.similarity(codes, codes))
+    print(model.similarity(codes[0], temp))
