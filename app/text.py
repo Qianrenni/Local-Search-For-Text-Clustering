@@ -39,7 +39,7 @@ def output_embedding(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
-    if result_dir.exists():
+    if result_dir.exists() and len(list(result_dir.iterdir())) > 0:
         print(f'{result_dir} already exists')
         return 
     result_dir.mkdir(parents=True, exist_ok=True)
