@@ -57,8 +57,6 @@ class LocalSearch(object):
         # cost改进比例不会超过2
         ratio = 2.0
         center_nums = centers.shape[0]
-        patience = 3
-        patience_count = 0
         for j in range(rounds):
             # 如果占比大于1+threshold，则增加batch
             if (j > 2) and (ratio > (1 + threshold)):
@@ -89,12 +87,11 @@ class LocalSearch(object):
             distance_new = np.min(distance_new, axis=1)
             # 新中心点的cost
             cost_new_centers = distance_new.sum()
+            delta = cost_old_centers - cost_new_centers
             # 收敛判断：如果改进很小就提前返回
             if (cost_old_centers / cost_new_centers) < (1 + threshold) \
-                    and patience_count >= patience:
-                return centers_now if (cost_old_centers - cost_new_centers > 0) else centers
-            else:
-                patience_count += 1
+                    and np.exp(-abs(delta)) > np.random.rand():
+                return centers_now if (delta > 0) else centers
             if cost_new_centers < cost_old_centers:
                 if j >= 2:
                     # 更新改进比例
