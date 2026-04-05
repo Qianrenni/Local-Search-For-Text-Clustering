@@ -84,7 +84,7 @@ if __name__ == '__main__':
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
         rounds = math.ceil(225*k) if args.rounds == 0 else args.rounds
-        batch = 64*k if args.batch == 0 else args.batch
+        batch = 128*k if args.batch == 0 else args.batch
         print(
             f'params:\n'
             f'  clusters: {k}\n'
