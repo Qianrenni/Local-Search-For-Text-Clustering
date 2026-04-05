@@ -19,7 +19,7 @@ def _args():
     parser.add_argument('-d', '--dataset', type=str, default='ag_news', help='Dataset name')
     parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
     parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
-    parser.add_argument('-t','--tol', type=float, default=0.0001, help='Tolerance for convergence')
+    parser.add_argument('-t','--tol', type=float, default=0.001, help='Tolerance for convergence')
     args = parser.parse_args()
     return args
 if __name__ == '__main__':
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(150*32*k*k/data_size) if args.rounds == 0 else args.rounds
+        rounds = math.ceil(225*64*k*k/data_size) if args.rounds == 0 else args.rounds
         print(
             f'params:\n'
             f'  clusters: {k}\n'
