@@ -130,7 +130,7 @@ if __name__ == '__main__':
             'all-MiniLM-L12-v2',
             'all-MiniLM-L6-v2',
             'all-mpnet-base-v2',
-            'clip-ViT-B-32-multilingual-v1',
+            # 'clip-ViT-B-32-multilingual-v1',
             'paraphrase-multilingual-MiniLM-L12-v2'
             ]
     for model_name in model_names:

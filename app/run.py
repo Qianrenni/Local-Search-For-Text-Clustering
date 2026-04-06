@@ -88,12 +88,11 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = k * 15 if args.rounds == 0 else args.rounds
-        trans = math.ceil(math.sqrt(rounds))  if args.trans == 0 else args.trans
-        trans+=k
-        batch = 128*k if args.batch == 0 else args.batch
+        rounds =600 if args.rounds == 0 else args.rounds
+        trans = 20  if args.trans == 0 else args.trans
+        batch = 512 if args.batch == 0 else args.batch
         total_batch = 15 if args.total_batch == 0 else args.total_batch
-        minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
+        minibatch_rounds = 100 if args.minibatch_rounds == 0 else args.minibatch_rounds
         print(
             f'params:\n'
             f'  clusters: {k}\n'

@@ -80,7 +80,7 @@ if __name__ == '__main__':
         dataset = f'{dataset_name}{data.shape}'
         print(f'Running on dataset(unnormalized): {dataset}')
         data_size = data.shape[0]
-        rounds = math.ceil(225*128*k*k/data_size) if args.rounds == 0 else args.rounds
+        rounds = math.ceil(600*512*15/data_size) if args.rounds == 0 else args.rounds
         print(
             f'params:\n'
             f'  clusters: {k}\n'
