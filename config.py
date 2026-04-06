@@ -11,4 +11,3 @@ for key in dir(SETTING):
     value = getattr(SETTING,key)
     if isinstance(value,Path):
         value.mkdir(parents=True,exist_ok=True)
-        print(f'mkdir {value}')

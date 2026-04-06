@@ -25,7 +25,8 @@ def get_text_cluster_data(dataset_name: str):
 def output_embedding(
     model_name:str,
     dataset_name:str,
-    batch_size:int=64
+    batch_size:int=64,
+    normlize:bool=True
 ):
     """
     输出文本嵌入
@@ -39,32 +40,27 @@ def output_embedding(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
-    if result_dir.exists() and len(list(result_dir.iterdir())) > 0:
-        print(f'{result_dir} already exists')
-        return 
     result_dir.mkdir(parents=True, exist_ok=True)
     train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
-    norm_vectors = []
     for i in tqdm(range(0, len(train), batch_size),desc=f'Encoding {dataset_name}'):
         batch_x = train['text'][i:i+batch_size].tolist()
         batch_y = train['y'][i:i+batch_size].tolist()
-        batch_embedding = model.encode(batch_x)
+        batch_embedding = model.encode(batch_x,normalize_embeddings=normlize)
         vectors.extend(batch_embedding)
-        norm_embedding = batch_embedding / np.sqrt(np.sum(batch_embedding**2, axis=1, keepdims=True))
-        norm_vectors.extend(norm_embedding)
         y.extend(batch_y)
-    assert np.isclose(np.linalg.norm(norm_vectors, axis=1), 1).all()
-    np.save(result_dir/'unnormlized_embedding.npy', np.array(vectors))
-    np.save(result_dir/'norm_embedding.npy', np.array(norm_vectors))
+    if normlize:
+        assert np.isclose(np.linalg.norm(vectors, axis=1), 1).all()
+    np.save(result_dir/f'{ 'normlized' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors))
     np.save(result_dir/'y.npy', np.array(y))
     with open(result_dir/'labels.json', 'w') as f:
         json.dump(labels, f, ensure_ascii=False, indent=4)
 def output_embedding_mean(
     model_name:str,
     dataset_name:str,
-    batch_size:int=64
+    batch_size:int=64,
+    normlize:bool=True
 ):
     """
     输出文本嵌入
@@ -81,14 +77,10 @@ def output_embedding_mean(
     tokenizer = model.tokenizer
     dim = model.get_sentence_embedding_dimension()
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
-    if result_dir.exists() and len(list(result_dir.iterdir())) > 0:
-        print(f'{result_dir} already exists')
-        return 
     result_dir.mkdir(parents=True, exist_ok=True)
     train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
-    norm_vectors = []
     for i in tqdm(range(0, len(train), batch_size),desc=f'Encoding {dataset_name}'):
         temp = train['text'][i:i+batch_size].tolist()
         indices = []
@@ -102,17 +94,15 @@ def output_embedding_mean(
         indices = np.array(indices)
         batch_y = train['y'][i:i+batch_size].tolist()
         batch_embedding = np.zeros((len(temp), dim))
-        temp_embedding = model.encode(batch_x)
+        temp_embedding = model.encode(batch_x,normalize_embeddings=normlize)
         np.add.at(batch_embedding, indices, temp_embedding)
         counts = np.bincount(indices)
         batch_embedding = batch_embedding / counts[:, None]
         vectors.extend(batch_embedding)
-        norm_embedding = batch_embedding / np.sqrt(np.sum(batch_embedding**2, axis=1, keepdims=True))
-        norm_vectors.extend(norm_embedding)
         y.extend(batch_y)
-    assert np.isclose(np.linalg.norm(norm_vectors, axis=1), 1).all()
+    if normlize:
+        assert np.isclose(np.linalg.norm(vectors, axis=1), 1).all()
     np.save(result_dir/'unnormlized_embedding.npy', np.array(vectors))
-    np.save(result_dir/'norm_embedding.npy', np.array(norm_vectors))
     np.save(result_dir/'y.npy', np.array(y))
     with open(result_dir/'labels.json', 'w') as f:
         json.dump(labels, f, ensure_ascii=False, indent=4)
@@ -122,25 +112,47 @@ def _args():
     parser = ArgumentParser()
     parser.add_argument('-d','--dataset_name', type=str, default='ag_news')
     parser.add_argument('-b','--batch_size', type=int, default=64)
+    parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
+    parser.add_argument('-t','--truncated',type=int,default=1)
+    parser.add_argument('-n','--norm',type=int,default=1)
+    parser.add_argument('-a','--all',type=int,default=0)
     args = parser.parse_args()
     return args
 if __name__ == '__main__':
     args = _args()
-    model_names = [
+    if args.all==1:
+        model_names = [
             'all-MiniLM-L12-v2',
             'all-MiniLM-L6-v2',
             'all-mpnet-base-v2',
             # 'clip-ViT-B-32-multilingual-v1',
             'paraphrase-multilingual-MiniLM-L12-v2'
             ]
-    for model_name in model_names:
-        output_embedding(
-            model_name=model_name,
-            dataset_name=args.dataset_name,
-            batch_size=args.batch_size
-        )
-        output_embedding_mean(
-            model_name=model_name,
-            dataset_name=args.dataset_name,
-            batch_size=args.batch_size
-        )
+        for model_name in model_names:
+            output_embedding(
+                model_name=model_name,
+                dataset_name=args.dataset_name,
+                batch_size=args.batch_size,
+                normlize=args.norm==1
+            )
+            output_embedding_mean(
+                model_name=model_name,
+                dataset_name=args.dataset_name,
+                batch_size=args.batch_size,
+                normlize=args.norm==1
+            )
+    else:
+        if args.truncated==1:
+            output_embedding(
+                model_name=args.model,
+                dataset_name=args.dataset_name,
+                batch_size=args.batch_size,
+                normlize=args.norm==1
+            )
+        else:
+            output_embedding_mean(
+                model_name=args.model,
+                dataset_name=args.dataset_name,
+                batch_size=args.batch_size,
+                normlize=args.norm==1
+            )
