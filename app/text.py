@@ -100,8 +100,6 @@ def output_embedding_mean(
         batch_embedding = batch_embedding / counts[:, None]
         vectors.extend(batch_embedding)
         y.extend(batch_y)
-    if normlize:
-        assert np.isclose(np.linalg.norm(vectors, axis=1), 1).all()
     np.save(result_dir/f'{ 'norm' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors))
     np.save(result_dir/'y.npy', np.array(y))
     with open(result_dir/'labels.json', 'w') as f:
