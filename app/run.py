@@ -51,6 +51,7 @@ def run(
     minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
     print(
         f'params:\n'
+        f'  data_path:{data_path}\n'
         f'  data_size:{data.shape}\n'
         f'  clusters: {k}\n'
         f'  rounds: {rounds}\n'
