@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from config import SETTING
 import numpy as np
 import torch
@@ -21,8 +23,53 @@ def _args():
     parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
     parser.add_argument('-t','--tol', type=float, default=0.0001, help='Tolerance for convergence')
     parser.add_argument('-b', '--batch', type=int, default=0, help='Batch size')
+    parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
+    parser.add_argument('-a','--all',type=int,default=0)
+    parser.add_argument('-n','--norm',type=int,default=1)
+    parser.add_argument('-k','--clusters',type=int,default=-1)
     args = parser.parse_args()
     return args
+
+def run(
+    model_name:str,
+    dataset_name:str,
+    data_path:Path,
+    y:np.ndarray,
+    args,
+    labels,
+    result:pd.DataFrame,
+    save_path:Path
+):
+    data = np.load(data_path)
+    k = len(labels) if args.clusters==-1 else args.clusters 
+    dataset = f'{dataset_name}{data.shape}'
+    rounds = (15*15*k) if args.rounds == 0 else args.rounds
+    batch = (128*k) if args.batch == 0 else args.batch
+    print(
+        f'params:\n'
+        f'  data_size{data.shape}\n'
+        f'  clusters: {k}\n'
+        f'  rounds: {rounds}\n'
+        f'  tolerance: {args.tol}\n'
+    )
+    kmeans = MiniBatchKMeans(
+        n_clusters=k,
+        batch_size=batch,
+        max_iter=rounds,
+        tol=args.tol,
+    )
+    for index in tqdm(range(iteration), desc=f'iteration'):
+        start_time = time.time()
+        kmeans.fit(data)
+        centers = kmeans.cluster_centers_
+        total_time = time.time() - start_time
+        loss = cost(data, centers)
+        labels = get_labels(data, centers)
+        ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
+        ch, db = ClusterEvaluator.internal_metrics(data, labels)
+        result.loc[(dataset, model_name, data_path.name.split('_')[0], k,rounds,batch, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+        result.to_excel(save_path)
+
 if __name__ == '__main__':
     np.random.seed(SETTING.SEED)
     random.seed(SETTING.SEED)
@@ -71,57 +118,49 @@ if __name__ == '__main__':
     result_dir.mkdir(parents=True, exist_ok=True)
     file_name = f'{datetime.now().strftime("%Y_%m_%d_%H_%M")}.xlsx'
 
-    for model in dataset_dir.iterdir():
-        model_name = model.name
-        print(f'Run on Model {model_name}')
-        data_path = dataset_dir/f'{model_name}'/ f'unnormlized_embedding.npy'
-        y_path = dataset_dir/f'{model_name}' / f'y.npy'
-        data = np.load(data_path)
-        y = np.load(y_path)
-        labels = json.load(open( dataset_dir/f'{model_name}'/ f'labels.json', 'r'))
-        k = len(labels)
-        dataset = f'{dataset_name}{data.shape}'
-        print(f'Running on dataset(unnormalized): {dataset}')
-        data_size = data.shape[0]
-        rounds = 600*15 if args.rounds == 0 else args.rounds
-        batch = 512 if args.batch == 0 else args.batch
-        print(
-            f'params:\n'
-            f'  clusters: {k}\n'
-            f'  rounds: {rounds}\n'
-            f'  tolerance: {args.tol}\n'
-            f'  batch size: {batch}\n'
-        )
-        kmeans = MiniBatchKMeans(
-            n_clusters=k,
-            batch_size=batch,
-            max_iter=rounds,
-            tol=args.tol,
-        )
-        for index in tqdm(range(iteration), desc=f'iteration'):
-            start_time = time.time()
-            kmeans.fit(data)
-            centers = kmeans.cluster_centers_
-            total_time = time.time() - start_time
-            loss = cost(data, centers)
-            labels = get_labels(data, centers)
-            ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
-            ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'unnormlized', k, rounds, batch,args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
-            result.to_excel(result_dir / file_name)
-        data = np.load(dataset_dir/f'{model_name}' / f'norm_embedding.npy')
-        print(f'Running on dataset(normalized): {dataset}')
-        for index in tqdm(range(iteration), desc=f'iteration'):
-            start_time = time.time()
-            kmeans.fit(data)
-            centers = kmeans.cluster_centers_
-            total_time = time.time() - start_time
-            loss = cost(data, centers)
-            labels = get_labels(data, centers)
-            ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
-            ch, db = ClusterEvaluator.internal_metrics(data, labels)
-            result.loc[(dataset, model_name, 'normalized', k, rounds, batch,args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
-            result.to_excel(result_dir / file_name)
+    if args.all==1:
+        for model in dataset_dir.iterdir():
+            model_name = model.name
+            labels = json.loads((model/'labels.json').read_text())
+            y = np.load(model/'y.npy')
+            norm_embedding_path = model/'norm_embedding.npy'
+            if norm_embedding_path.exists():
+                run(
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    data_path=norm_embedding_path,
+                    y=y,
+                    args=args,
+                    result=result,
+                    save_path=result/file_name
+                )
+            unnormlized_embedding_path = model/'unnormlized_embedding.npy'
+            if unnormlized_embedding_path.exists():
+                run(
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    data_path=norm_embedding_path,
+                    y=y,
+                    args=args,
+                    result=result,
+                    save_path=result/file_name
+                )
+    else:
+        model_dir = dataset_dir/f'{args.model}'
+        if model_dir.exists():
+            labels = json.loads((model_dir/'labels.json').read_text())
+            y = np.load(model_dir/'y.npy')
+            data_path = model_dir/f'{'norm' if args.norm else 'unnormlized'}_embedding.npy'
+            run(
+                model_name=model_dir.name,
+                dataset_name=dataset_name,
+                data_path=data_path,
+                y=y,
+                labels=labels,
+                args=args,
+                result=result,
+                save_path=result_dir/file_name
+            )
     result.reset_index(inplace=True)
     arrgregate_df = result.groupby(['dataset',
                                     'model',
