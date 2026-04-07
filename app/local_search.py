@@ -163,13 +163,13 @@ class LocalSearch(object):
                     # 样本点到最近中心的距离
                     distance_nearest = distance.copy()[:, 0]
                     # 归于当前step索引的中心的样本
-                    points_index_affected = np.argwhere(k_center_indexes == solution[step])[:, 0]
+                    points_index_affected = k_center_indexes == solution[step]
                     # 将其距离更新为第二近的距离
                     distance_nearest[points_index_affected] = (distance[points_index_affected])[:, 1]
                     # 计算成本变化:新距离-旧距离
                     distance_difference = batch_dis_with_next_point - distance_nearest
                     # 有增益的样本点
-                    index_large = np.argwhere(distance_difference < 0)[:, 0]
+                    index_large = distance_difference < 0
                     # 更新距离为新距离
                     distance_nearest[index_large] = batch_dis_with_next_point[index_large]
                     # 计算成本变化:新距离-旧距离
@@ -179,7 +179,7 @@ class LocalSearch(object):
                         temp_std = distance_difference.std()
                         s_mean[current_center_index] = distance_difference.mean()
                         std_history[current_center_index] = (temp_std ** 2) * self.batch_
-                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log10(1 / delta) / self.batch_)
+                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log10(1/ delta) / self.batch_)
                     else:
 
                         smean_old = s_mean[current_center_index]
@@ -191,8 +191,7 @@ class LocalSearch(object):
                         ).sum()
                         std = np.sqrt(std_sum / (used_count + self.batch_))
                         std_history[current_center_index] = std_sum
-                        s_std[current_center_index] = std * (
-                                0.25 * math.sqrt(math.log10(1 / delta) / (self.batch_ + used_count)))
+                        s_std[current_center_index] = std *0.25*np.sqrt(np.log10(1 / delta) / (self.batch_ + used_count))
                 flag = 1
                 used_count += self.batch_
                 # UCB淘汰策略：保留"可能最优"的交换对
