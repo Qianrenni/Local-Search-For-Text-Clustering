@@ -1,5 +1,6 @@
 import math
 import numpy as np
+# from sklearn.cluster import MiniBatchKMeans
 from app.util import l2_distance, sample, k_nearest_neighbors
 class LocalSearch(object):
     """
@@ -14,7 +15,7 @@ class LocalSearch(object):
             batch=100,
             total_batch=10,
             minibatchround=40,
-            threshold=1e-3,
+            threshold=0,
     ):
         """
         Args:
@@ -54,13 +55,13 @@ class LocalSearch(object):
         Returns:
             centers (n_clusters, n_features): 最终中心点
         """
-        # cost改进比例不会超过2
-        ratio = 2.0
+        # cost改进比例
+        ratio = 1
         center_nums = centers.shape[0]
         for j in range(rounds):
             # 如果占比大于1+threshold，则增加batch
-            if (j > 2) and (ratio > (1 + threshold)):
-                batch = math.ceil(batch * (1 + threshold))
+            if (j > 0) and (ratio > (1 + threshold)):
+                batch = math.ceil(batch * ratio)
 
             # 随机选择 batch 个样本
             points = sample(data, batch)
@@ -87,15 +88,13 @@ class LocalSearch(object):
             distance_new = np.min(distance_new, axis=1)
             # 新中心点的cost
             cost_new_centers = distance_new.sum()
-            delta = cost_old_centers - cost_new_centers
+            new_ratio = cost_old_centers / cost_new_centers
             # 收敛判断：如果改进很小就提前返回
-            if (cost_old_centers / cost_new_centers) < (1 + threshold) \
-                    and np.exp(-abs(delta)) > np.random.rand():
-                return centers_now if (delta > 0) else centers
-            if cost_new_centers < cost_old_centers:
-                if j >= 2:
-                    # 更新改进比例
-                    ratio = cost_old_centers / cost_new_centers
+            if new_ratio < (1 + threshold):
+                return centers_now if (new_ratio > 1) else centers
+            if new_ratio > 1:
+                # 更新改进比例
+                ratio = new_ratio
                 centers = centers_now
         return centers
 
@@ -126,10 +125,11 @@ class LocalSearch(object):
             for step in range(self.trans_):
                 y_point = trans_points[step]
                 y_min_distance = trans_min_distance[step]
-                if y_min_distance < 1e-9:
+                if x_min_distance < 1e-9:
+                    x_min_distance = 0.01
                     continue
-                delta = y_min_distance - x_min_distance
-                if delta<0 or np.exp(-delta) > np.random.rand():
+                ratio = y_min_distance/x_min_distance
+                if ratio > np.random.rand():
                     x_min_distance = y_min_distance
                     x_distance_with_centers = trans_points_distance_with_centers[step]
                     next_point = y_point

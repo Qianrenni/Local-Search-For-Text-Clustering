@@ -4,13 +4,12 @@ from config import SETTING
 import numpy as np
 import torch
 import random
-import math
 import json
 
 import pandas as pd
 from datetime import datetime
-# from sklearn.cluster import MiniBatchKMeans
-from app.custom import MiniBatchKMeans
+from sklearn.cluster import MiniBatchKMeans
+# from app.custom import MiniBatchKMeans
 from app.eval import ClusterEvaluator
 from app.util import cost,get_labels
 import time

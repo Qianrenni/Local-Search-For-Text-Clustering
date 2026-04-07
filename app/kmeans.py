@@ -9,8 +9,8 @@ import json
 
 import pandas as pd
 from datetime import datetime
-# from sklearn.cluster import KMeans
-from app.custom import KMeans
+from sklearn.cluster import KMeans
+# from app.custom import KMeans
 from app.eval import ClusterEvaluator
 from app.util import cost,get_labels
 import time
