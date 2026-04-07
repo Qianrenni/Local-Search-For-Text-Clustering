@@ -11,3 +11,4 @@ processed_data/
 .xlsx
 *temp/
 temp*.*
+result*
