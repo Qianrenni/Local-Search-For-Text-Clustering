@@ -131,7 +131,7 @@ if __name__ == '__main__':
                     y=y,
                     args=args,
                     result=result,
-                    save_path=result/file_name
+                    save_path=result_dir/file_name
                 )
             unnormlized_embedding_path = model/'unnormlized_embedding.npy'
             if unnormlized_embedding_path.exists():
@@ -142,7 +142,7 @@ if __name__ == '__main__':
                     y=y,
                     args=args,
                     result=result,
-                    save_path=result/file_name
+                    save_path=result_dir/file_name
                 )
     else:
         model_dir = dataset_dir/f'{args.model}'
