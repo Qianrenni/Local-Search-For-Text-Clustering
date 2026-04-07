@@ -125,6 +125,7 @@ if __name__ == '__main__':
                     dataset_name=dataset_name,
                     data_path=norm_embedding_path,
                     y=y,
+                    labels=labels,
                     args=args,
                     result=result,
                     save_path=result/file_name
@@ -136,6 +137,7 @@ if __name__ == '__main__':
                     dataset_name=dataset_name,
                     data_path=norm_embedding_path,
                     y=y,
+                    labels=labels,
                     args=args,
                     result=result,
                     save_path=result/file_name
