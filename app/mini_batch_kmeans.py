@@ -49,6 +49,7 @@ def run(
         f'  data_size{data.shape}\n'
         f'  clusters: {k}\n'
         f'  rounds: {rounds}\n'
+        f'  batch size: {batch}\n'
         f'  tolerance: {args.tol}\n'
     )
     kmeans = MiniBatchKMeans(
