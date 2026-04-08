@@ -55,7 +55,21 @@ def get_labels(x, centers):
     """
     distance = l2_distance(x, centers)
     return np.argmin(distance, axis=1)
-
+def get_centers(x, labels, n_clusters):
+    """
+    计算中心点
+    Args:
+        x (n_samples, n_features): 输入数据
+        labels (n_samples,): 标签
+        n_clusters (int): 中心点数量
+    Returns:
+        centers (n_clusters, n_features): 中心点
+    """
+    centers = np.zeros((n_clusters, x.shape[1]))
+    np.add.at(centers, labels, x)
+    counts = np.bincount(labels,minlength=n_clusters)
+    centers /= counts[:, None]
+    return centers
 
 def cost(x, centers):
     """
