@@ -16,6 +16,7 @@ class LocalSearch(object):
             total_batch=10,
             minibatchround=40,
             threshold=0,
+            epsilon=0.1,
     ):
         """
         Args:
@@ -26,6 +27,7 @@ class LocalSearch(object):
             total_batch: Bandit评估总批次数
             minibatchround: 最终微调的迭代轮数
             threshold: 微调改进阈值
+            epsilon: 贪婪选择概率
         """
 
         self.n_clusters_ = n_clusters
@@ -35,7 +37,8 @@ class LocalSearch(object):
         self.total_batch_ = total_batch
         self.minibatchround_ = minibatchround
         self.threshold_ = threshold
-
+        self.epsilon_ = epsilon
+        
     def minibatch_kmeans(
         self,
         data,
@@ -179,7 +182,7 @@ class LocalSearch(object):
                         temp_std = distance_difference.std()
                         s_mean[current_center_index] = distance_difference.mean()
                         std_history[current_center_index] = (temp_std ** 2) * self.batch_
-                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log10(1/ delta) / self.batch_)
+                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log(2*sample_size) / self.batch_)
                     else:
 
                         smean_old = s_mean[current_center_index]
@@ -191,7 +194,7 @@ class LocalSearch(object):
                         ).sum()
                         std = np.sqrt(std_sum / (used_count + self.batch_))
                         std_history[current_center_index] = std_sum
-                        s_std[current_center_index] = std *0.25*np.sqrt(np.log10(1 / delta) / (self.batch_ + used_count))
+                        s_std[current_center_index] = std*self.epsilon_*np.sqrt(2*np.log(2*sample_size) / (self.batch_ + used_count))
                 flag = 1
                 used_count += self.batch_
                 # UCB淘汰策略：保留"可能最优"的交换对

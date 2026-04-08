@@ -47,10 +47,11 @@ def run(
     rounds = k * 15 if args.rounds == 0 else args.rounds
     trans = math.ceil(math.sqrt(rounds))  if args.trans == 0 else args.trans
     trans+=k
-    batch = 128*k if args.batch == 0 else args.batch
-    batch = min(data_size*2//100,batch)
+    batch = min(1024,128*k) if args.batch == 0 else args.batch
+    batch = min(batch, data_size)
     total_batch = 15 if args.total_batch == 0 else args.total_batch
     minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
+    epsilon = batch/data_size
     print(
         f'params:\n'
         f'  data_path:{data_path}\n'
@@ -61,6 +62,7 @@ def run(
         f'  batch: {batch}\n'
         f'  total_batch: {total_batch}\n'
         f'  minibatch_rounds: {minibatch_rounds}\n'
+        f'  epsilon: {epsilon}\n'
     )
     local_search = LocalSearch(
         n_clusters=k,
@@ -68,7 +70,8 @@ def run(
         trans=trans,
         batch=batch,
         total_batch=total_batch,
-        minibatchround=minibatch_rounds
+        minibatchround=minibatch_rounds,
+        epsilon=epsilon
     )
     for index in tqdm(range(iteration), desc=f'iteration'):
         start_time = time.time()
@@ -79,7 +82,7 @@ def run(
         labels = get_labels(data, centers)
         ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
         ch, db = ClusterEvaluator.internal_metrics(data, labels)
-        result.loc[(dataset, model_name,data_path.name.split('_')[0], k, rounds, trans, batch, total_batch, minibatch_rounds, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+        result.loc[(dataset, model_name,data_path.name.split('_')[0], k, rounds, trans, batch, total_batch, minibatch_rounds, epsilon, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
         result.to_excel(save_path)
 if __name__ == '__main__':
     np.random.seed(SETTING.SEED)
@@ -101,6 +104,7 @@ if __name__ == '__main__':
                 'batch',
                 'total_batch',
                 'minibatch_rounds',
+                'epsilon',
                 'iteration',
                 'ARI',
                 'NMI',
@@ -125,6 +129,7 @@ if __name__ == '__main__':
                 'batch', 
                 'total_batch',
                 'minibatch_rounds',
+                'epsilon',
                 'iteration'
             ],
             inplace=True
@@ -187,6 +192,7 @@ if __name__ == '__main__':
                                     'trans',
                                     'batch',
                                     'total_batch',
-                                    'minibatch_rounds'
+                                    'minibatch_rounds',
+                                    'epsilon',
                                 ]).agg(['mean', 'std']).reset_index()
     arrgregate_df.to_excel(result_dir / f'aggregate_{file_name}')
