@@ -26,7 +26,7 @@ def _args():
     parser.add_argument('-mbr', '--minibatch_rounds', type=int, default=0, help='Minibatch rounds')
     parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
     parser.add_argument('-a','--all',type=int,default=0)
-    parser.add_argument('-n','--norm',type=int,default=1)
+    parser.add_argument('-n','--norm',type=int,default=0)
     parser.add_argument('-k','--clusters',type=int,default=-1)
     args = parser.parse_args()
     return args
