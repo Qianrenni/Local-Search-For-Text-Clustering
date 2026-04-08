@@ -51,7 +51,7 @@ def run(
     batch = min(batch, data_size)
     total_batch = 15 if args.total_batch == 0 else args.total_batch
     minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
-    epsilon = batch/data_size
+    epsilon = 1/(np.log(data_size/batch)+1e-9)
     print(
         f'params:\n'
         f'  data_path:{data_path}\n'
