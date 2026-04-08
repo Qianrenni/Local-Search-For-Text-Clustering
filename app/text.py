@@ -26,7 +26,7 @@ def output_embedding(
     model_name:str,
     dataset_name:str,
     batch_size:int=64,
-    normlize:bool=True
+    normlize:bool=False
 ):
     """
     输出文本嵌入
@@ -60,7 +60,7 @@ def output_embedding_mean(
     model_name:str,
     dataset_name:str,
     batch_size:int=64,
-    normlize:bool=True
+    normlize:bool=False
 ):
     """
     输出文本嵌入
@@ -112,7 +112,7 @@ def _args():
     parser.add_argument('-b','--batch_size', type=int, default=64)
     parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
     parser.add_argument('-t','--truncated',type=int,default=1)
-    parser.add_argument('-n','--norm',type=int,default=1)
+    parser.add_argument('-n','--norm',type=int,default=0)
     parser.add_argument('-a','--all',type=int,default=0)
     args = parser.parse_args()
     return args
