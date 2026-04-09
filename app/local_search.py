@@ -182,7 +182,7 @@ class LocalSearch(object):
                         temp_std = distance_difference.std()
                         s_mean[current_center_index] = distance_difference.mean()
                         std_history[current_center_index] = (temp_std ** 2) * self.batch_
-                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log(2*sample_size) / self.batch_)
+                        s_std[current_center_index] = temp_std * np.sqrt(2 * np.log10(sample_size) / self.batch_)
                     else:
 
                         smean_old = s_mean[current_center_index]
@@ -194,7 +194,7 @@ class LocalSearch(object):
                         ).sum()
                         std = np.sqrt(std_sum / (used_count + self.batch_))
                         std_history[current_center_index] = std_sum
-                        s_std[current_center_index] = std*self.epsilon_*np.sqrt(2*np.log(2*sample_size) / (self.batch_ + used_count))
+                        s_std[current_center_index] = std*self.epsilon_*np.sqrt(np.log10(sample_size) / (self.batch_ + used_count))
                 flag = 1
                 used_count += self.batch_
                 # UCB淘汰策略：保留"可能最优"的交换对
