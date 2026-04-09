@@ -43,7 +43,10 @@ def run(
     k = len(labels) if args.clusters==-1 else args.clusters 
     dataset = f'{dataset_name}{data.shape}'
     data_size = data.shape[0]
-    rounds = math.ceil(128*15*15*k*k/data_size) if args.rounds == 0 else args.rounds
+    rounds = min(60,k * 15) if args.rounds == 0 else args.rounds
+    batch = min(1024,128*k)
+    batch = min(batch, data_size)
+    rounds = math.ceil(batch*rounds*15/data_size) if args.rounds == 0 else args.rounds
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'

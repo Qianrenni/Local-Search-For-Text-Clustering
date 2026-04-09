@@ -44,7 +44,7 @@ def run(
     data_size = data.shape[0]
     k = len(labels) if args.clusters==-1 else args.clusters 
     dataset = f'{dataset_name}{data.shape}'
-    rounds = k * 15 if args.rounds == 0 else args.rounds
+    rounds = min(60,k * 15) if args.rounds == 0 else args.rounds
     trans = math.ceil(math.sqrt(rounds))  if args.trans == 0 else args.trans
     trans+=k
     batch = min(1024,128*k) if args.batch == 0 else args.batch
