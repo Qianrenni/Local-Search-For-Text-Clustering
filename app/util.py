@@ -21,6 +21,7 @@ def l2_distance(
     # [n_clusters,1]
     centers_2 = np.sum(centers ** 2, axis=1, keepdims=True)
     result = x_2 + centers_2.T - 2 * x @ centers.T
+    result=np.maximum(result, 0)
     return result.squeeze()
 
 

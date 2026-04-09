@@ -239,26 +239,16 @@ class LocalSearch(object):
         sample_size = x.shape[0]
         center_size = centers.shape[0]
         # [最近距离,第二近距离]
-        dist_2 = np.ones([sample_size, 2])
-        dist = (l2_distance(x, centers))
-        sort_indexes = np.argsort(dist, axis=1)
-        affected_list = [[] for i in range(center_size)]
-        for i in range(sample_size):
-            dist_2[i][0] = dist[i][sort_indexes[i][0]]
-            dist_2[i][1] = dist[i][sort_indexes[i][1]]
-            # 记录每个族的归属
-            affected_list[sort_indexes[i][0]].append(i)
-
+        dist_2,indexes = k_nearest_neighbors(x, centers, 2)
         # "Calculating the current clustering cost"
         cost_now = (dist_2[:, 0]).sum()
 
         # "Construct the sampling distribution"
         # 按照最近距离的大小进行采样
-        prob_modified = dist_2[:, 0] / (dist_2[:, 0].sum())
-
-        sample_list = list(range(sample_size))
+        min_dist = dist_2[:, 0]
+        prob_modified = min_dist / (min_dist.sum())
         # "Start the Local Search Process"
-        candidate_next = np.random.choice(sample_list, size=1, p=prob_modified).tolist()
+        candidate_next = np.random.choice(sample_size, size=self.rounds_, p=prob_modified)
         for i in range(0, self.rounds_):
 
             cost_min = INF
@@ -269,66 +259,47 @@ class LocalSearch(object):
             # "Construct the sampling distribution"
 
             # "Sample one data point from the modified probability"
-            next_point = candidate_next[i]
-            centers_new = (x[next_point]).reshape(1, -1)
-            dist_tot_new = (l2_distance(x, centers_new))[:, 0]
-
+            next_point_index = candidate_next[i]
+            centers_new =  x[next_point_index].squeeze()
+            dist_tot_new = l2_distance(x, centers_new)
             # "Make the comparison between the distances of nearest and the new centers"
             dist_tot_new_modified = (dist_2.copy())[:, 0]
             dist_diff = dist_tot_new_modified - dist_tot_new
-            dist_large_id = (np.argwhere(dist_diff > 0))[:, 0]
+            dist_large_id = dist_diff > 0
             dist_tot_new_modified[dist_large_id] = dist_tot_new[dist_large_id]
 
             # "Finding the minimum id"
-            next_numpy = data[next_point]
-            next_numpy = next_numpy.reshape(1, -1)
-            pd_k = l2_distance(centers, next_numpy)[:, 0]
-            min_id = np.argmin(pd_k)
-            rd_id = sample(range(0, len(centers)), 1)[0]
+
+            min_id = np.argmin(l2_distance(centers, centers_new))
+            mask = np.ones(center_size, dtype=bool)
+            mask[min_id] = False
+            rd_id = sample(np.arange(center_size)[mask],1)
 
             # "Try to enumerate possible swap pairs"
             for j in [min_id, rd_id]:
                 # "Find the points whose closest center are swapped out"
                 # "Now try to swap the j-th center out"
-                dist_temp = dist_2.copy()
-                id_affected = np.array(affected_list[j], dtype=int)
+                id_affected = np.argwhere(indexes == j)[:,0]
 
                 # "Compare the distances and calculate the new cost"
-                dist_affected_modified = (dist_temp[id_affected])[:, 1]
+                dist_affected_modified = (dist_2[id_affected])[:, 1]
                 pd = dist_tot_new[id_affected]
                 dist_diff = dist_affected_modified - pd
-                id_large = (np.argwhere(dist_diff > 0))[:, 0]
+                id_large = dist_diff > 0
                 dist_affected_modified[id_large] = pd[id_large]
-                cost_new = dist_tot_new_modified.sum() - (
-                    dist_tot_new_modified[id_affected]).sum() + dist_affected_modified.sum()
+                cost_new = dist_tot_new_modified.sum() - (dist_tot_new_modified[id_affected]).sum() + dist_affected_modified.sum()
 
                 # "Judge if the swap is feasible"
-                if (cost_new < cost_min):
+                if cost_new < cost_min:
                     cost_min = cost_new
                     swap_id = j
 
             # "Check whether the minimum cost swap is feasible"
-            if (cost_min < (1 - 1 / (100 * self.n_clusters_)) * cost_now):
+            if cost_min < cost_now:
 
                 # "Perform this swap"
                 cost_now = cost_min
-                centers[swap_id] = x[next_point]
+                centers[swap_id] = centers_new
                 # "Renew the distance structures"
-                center_new = (x[next_point]).reshape(1, -1)
-                pd = (l2_distance(x, center_new))[:, 0]
-                dist[:, swap_id] = pd
-                sort_indexes = np.argsort(dist, axis=1)
-                dist_2 = np.ones([x.shape[0], 2])
-                affected_list = [[] for j1 in range(0, centers.shape[0])]
-                for j1 in range(0, x.shape[0]):
-                    dist_2[j1][0] = dist[j1][sort_indexes[j1][0]]
-                    dist_2[j1][1] = dist[j1][sort_indexes[j1][1]]
-                    affected_list[sort_indexes[j1][0]].append(j1)
-
-                prob_modified = dist_2[:, 0] / (dist_2[:, 0].sum())
-            else:
-                continue
-        mini_batch_size = math.ceil(0.01 * data.shape[0])
-        mini_batch_size = min(math.ceil(data.shape[0] * 0.1), mini_batch_size)
-        centers = self.minibatch_kmeans(x, centers, mini_batch_size, self.minibatchround_, 0.05)
-        return centers
+                dist_2,indexes = k_nearest_neighbors(x, centers, 2)
+        return self.minibatch_kmeans(x, centers, self.batch_, self.minibatchround_, self.threshold_)
