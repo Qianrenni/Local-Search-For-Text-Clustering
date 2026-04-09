@@ -52,6 +52,7 @@ def run(
     total_batch = 15 if args.total_batch == 0 else args.total_batch
     minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
     epsilon = 1/(np.log(data_size/batch)+1e-9)
+    current_time = datetime.now().strftime("%Y_%m_%d_%H_%M")
     print(
         f'params:\n'
         f'  data_path:{data_path}\n'
@@ -82,8 +83,7 @@ def run(
         labels = get_labels(data, centers)
         ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
         ch, db = ClusterEvaluator.internal_metrics(data, labels)
-        result.loc[(dataset, model_name,data_path.name.split('_')[0], k, rounds, trans, batch, total_batch, minibatch_rounds, epsilon, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
-        result.to_excel(save_path)
+        result.loc[(dataset,current_time,model_name,data_path.name.split('_')[0], k, rounds, trans, batch, total_batch, minibatch_rounds, epsilon, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
 if __name__ == '__main__':
     np.random.seed(SETTING.SEED)
     random.seed(SETTING.SEED)
@@ -96,6 +96,7 @@ if __name__ == '__main__':
     result = pd.DataFrame(
             columns=[
                 'dataset',
+                'datetime',
                 'model',
                 'norm',
                 'clusters',
@@ -121,6 +122,7 @@ if __name__ == '__main__':
     result.set_index(
             [
                 'dataset',
+                'datetime',
                 'model' ,
                 'norm', 
                 'clusters', 
@@ -136,8 +138,10 @@ if __name__ == '__main__':
         )
     result_dir = SETTING.RESULT / dataset_name/'local_search'
     result_dir.mkdir(parents=True, exist_ok=True)
-    file_name = f'{datetime.now().strftime("%Y_%m_%d_%H_%M")}.xlsx' 
-
+    file_name = f'data.xlsx' 
+    previous_result=None
+    if (result_dir/file_name).exists():
+        previous_result = pd.read_excel(result_dir/file_name)
     if args.all==1:
         for model in dataset_dir.iterdir():
             model_name = model.name
@@ -184,7 +188,11 @@ if __name__ == '__main__':
                 save_path=result_dir/file_name
             )
     result.reset_index(inplace=True)
+    if previous_result is not None:
+        result = pd.concat([previous_result, result])
+    result.to_excel(result_dir / file_name,index=False)
     arrgregate_df = result.groupby(['dataset',
+                                    'datetime',
                                     'model',
                                     'norm',
                                     'clusters',
