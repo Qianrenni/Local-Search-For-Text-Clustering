@@ -99,6 +99,6 @@ def k_nearest_neighbors(x, centers, k=1):
         dist (n_samples, k): k近邻距离
         indices (n_samples, k): k近邻索引
     """
-    distance = torch.tensor(l2_distance(x, centers), dtype=torch.float64)
+    distance = torch.tensor(l2_distance(x, centers))
     dist, indices = torch.topk(distance, k, dim=1, largest=False)
     return dist.numpy(), indices.numpy()
