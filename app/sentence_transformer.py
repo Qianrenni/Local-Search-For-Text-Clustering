@@ -16,7 +16,7 @@ def get_sentence_transformer(
             ]='all-MiniLM-L6-v2',
         device=None
     ):
-    model = SentenceTransformer(str(sentence_transformer_path/model_name),device=device)
+    model = SentenceTransformer(str(sentence_transformer_path/model_name),device=device,trust_remote_code=True)
     return model
 
 
