@@ -37,6 +37,7 @@ def output_embedding(
         dataset_name (str): 数据集名称
         batch_size (int): 批处理大小
     """
+    train, labels = get_text_cluster_data(dataset_name)
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
     if result_dir.exists():
         print(f'{result_dir} already exists')
@@ -44,7 +45,6 @@ def output_embedding(
     result_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
-    train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
     for i in tqdm(range(0, len(train), batch_size),desc=f'Encoding {dataset_name}'):
@@ -55,7 +55,7 @@ def output_embedding(
         y.extend(batch_y)
     if normlize:
         assert np.isclose(np.linalg.norm(vectors, axis=1), 1).all()
-    np.save(result_dir/f'{ 'norm' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors))
+    np.save(result_dir/f'{ 'norm' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors,dtype=np.float32))
     np.save(result_dir/'y.npy', np.array(y))
     with open(result_dir/'labels.json', 'w') as f:
         json.dump(labels, f, ensure_ascii=False, indent=4)
@@ -73,6 +73,7 @@ def output_embedding_mean(
         dataset_name (str): 数据集名称
         batch_size (int): 批处理大小
     """
+    train, labels = get_text_cluster_data(dataset_name)
     result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
     if result_dir.exists():
         print(f'{result_dir} already exists')
@@ -83,8 +84,6 @@ def output_embedding_mean(
     max_length=model.max_seq_length-2
     tokenizer = model.tokenizer
     dim = model.get_sentence_embedding_dimension()
-
-    train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
     for i in tqdm(range(0, len(train), batch_size),desc=f'Encoding {dataset_name}'):
@@ -106,7 +105,7 @@ def output_embedding_mean(
         batch_embedding = batch_embedding / counts[:, None]
         vectors.extend(batch_embedding)
         y.extend(batch_y)
-    np.save(result_dir/f'{ 'norm' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors))
+    np.save(result_dir/f'{ 'norm' if normlize else 'unnormlized'}_embedding.npy', np.array(vectors,dtype=np.float32))
     np.save(result_dir/'y.npy', np.array(y))
     with open(result_dir/'labels.json', 'w') as f:
         json.dump(labels, f, ensure_ascii=False, indent=4)
