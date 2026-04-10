@@ -38,7 +38,6 @@ def run(
     args,
     labels,
     result:pd.DataFrame,
-    save_path:Path
 ):
     data = np.load(data_path)
     data_size = data.shape[0]

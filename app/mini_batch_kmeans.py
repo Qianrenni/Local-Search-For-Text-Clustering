@@ -46,6 +46,7 @@ def run(
     rounds = min(60,k*15) if args.rounds == 0 else args.rounds
     batch = min(1024,128*k) if args.batch == 0 else args.batch
     batch = min(batch, data_size)
+    current = datetime.now().strftime("%Y_%m_%d_%H_%M");
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'
@@ -69,7 +70,7 @@ def run(
         labels = get_labels(data, centers)
         ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
         ch, db = ClusterEvaluator.internal_metrics(data, labels)
-        result.loc[(dataset, model_name, data_path.name.split('_')[0], k,rounds,batch, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+        result.loc[(dataset,current ,model_name, data_path.name.split('_')[0], k,rounds,batch, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
         result.to_excel(save_path)
 
 if __name__ == '__main__':
@@ -84,6 +85,7 @@ if __name__ == '__main__':
     result = pd.DataFrame(
             columns=[
                 'dataset',
+                'datetime',
                 'model',
                 'norm',
                 'clusters',
@@ -106,6 +108,7 @@ if __name__ == '__main__':
     result.set_index(
             [
                 'dataset',
+                'datetime',
                 'model' ,
                 'norm', 
                 'clusters', 
@@ -118,8 +121,10 @@ if __name__ == '__main__':
         )
     result_dir = SETTING.RESULT / dataset_name/'mini_batch_kmeans'
     result_dir.mkdir(parents=True, exist_ok=True)
-    file_name = f'{datetime.now().strftime("%Y_%m_%d_%H_%M")}.xlsx'
-
+    file_name = f'data.xlsx'
+    previous_result = None
+    if (result_dir/file_name).exists():
+        previous_result = pd.read_excel(result_dir/file_name)
     if args.all==1:
         for model in dataset_dir.iterdir():
             model_name = model.name
@@ -166,7 +171,11 @@ if __name__ == '__main__':
                 save_path=result_dir/file_name
             )
     result.reset_index(inplace=True)
+    if previous_result is not None:
+        result = pd.concat([previous_result, result])
+    result.to_excel(result_dir / file_name,index=False)
     arrgregate_df = result.groupby(['dataset',
+                                    'datetime',
                                     'model',
                                     'norm',
                                     'clusters',
