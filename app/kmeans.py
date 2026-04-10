@@ -143,7 +143,7 @@ if __name__ == '__main__':
                 run(
                     model_name=model_name,
                     dataset_name=dataset_name,
-                    data_path=norm_embedding_path,
+                    data_path=unnormlized_embedding_path,
                     y=y,
                     labels=labels,
                     args=args,
