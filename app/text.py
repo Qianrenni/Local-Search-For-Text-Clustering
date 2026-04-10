@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from config import SETTING
 from app.sentence_transformer import get_sentence_transformer
+import torch
 def get_text_cluster_data(dataset_name: str):
     """
     获取文本聚类数据
@@ -36,11 +37,13 @@ def output_embedding(
         dataset_name (str): 数据集名称
         batch_size (int): 批处理大小
     """
-    import torch
+    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
+    if result_dir.exists():
+        print(f'{result_dir} already exists')
+        return 
+    result_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
-    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
-    result_dir.mkdir(parents=True, exist_ok=True)
     train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
@@ -70,14 +73,17 @@ def output_embedding_mean(
         dataset_name (str): 数据集名称
         batch_size (int): 批处理大小
     """
-    import torch
+    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
+    if result_dir.exists():
+        print(f'{result_dir} already exists')
+        return 
+    result_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_sentence_transformer(model_name=model_name,device=device)
     max_length=model.max_seq_length-2
     tokenizer = model.tokenizer
     dim = model.get_sentence_embedding_dimension()
-    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
-    result_dir.mkdir(parents=True, exist_ok=True)
+
     train, labels = get_text_cluster_data(dataset_name)
     vectors = []
     y = []
@@ -119,21 +125,9 @@ def _args():
 if __name__ == '__main__':
     args = _args()
     if args.all==1:
-        model_names = [
-            'all-MiniLM-L12-v2',
-            'all-MiniLM-L6-v2',
-            'all-mpnet-base-v2',
-            # 'clip-ViT-B-32-multilingual-v1',
-            'paraphrase-multilingual-MiniLM-L12-v2'
-            ]
+        model_names = [ sub_dir.name for sub_dir in SETTING.DEPENDENCY.iterdir()]
         for model_name in model_names:
             output_embedding(
-                model_name=model_name,
-                dataset_name=args.dataset_name,
-                batch_size=args.batch_size,
-                normlize=args.norm==1
-            )
-            output_embedding_mean(
                 model_name=model_name,
                 dataset_name=args.dataset_name,
                 batch_size=args.batch_size,
