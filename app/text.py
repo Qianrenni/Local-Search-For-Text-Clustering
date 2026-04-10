@@ -38,7 +38,7 @@ def output_embedding(
         batch_size (int): 批处理大小
     """
     train, labels = get_text_cluster_data(dataset_name)
-    result_dir = SETTING.PREPROCESS_DATA/f'{dataset_name}'/f'{model_name}'
+    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}'
     if result_dir.exists():
         print(f'{result_dir} already exists')
         return 
@@ -74,7 +74,7 @@ def output_embedding_mean(
         batch_size (int): 批处理大小
     """
     train, labels = get_text_cluster_data(dataset_name)
-    result_dir = SETTING.PREPROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
+    result_dir = SETTING.PROCESS_DATA/f'{dataset_name}'/f'{model_name}_mean'
     if result_dir.exists():
         print(f'{result_dir} already exists')
         return 
