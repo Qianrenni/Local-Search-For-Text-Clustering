@@ -11,9 +11,9 @@ def get_text_cluster_data(dataset_name: str):
     Args:
         dataset_name (str): 数据集名称
     """
-    dataset_path = SETTING.DATA/f'{dataset_name}'/'train.xlsx'
+    dataset_path = SETTING.PREPROCESS_DATA/f'{dataset_name}'/'train.xlsx'
     if not dataset_path.exists():
-        dataset_path = SETTING.DATA/f'{dataset_name}'/'train.json'
+        dataset_path = SETTING.PREPROCESS_DATA/f'{dataset_name}'/'train.json'
         df = pd.read_json(dataset_path)
     else:
         df = pd.read_excel(dataset_path)

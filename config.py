@@ -4,6 +4,7 @@ class SETTING:
     ROOT=Path(__file__).parent
     RESULT=ROOT/'result'
     DATA=ROOT/'data'
+    PREPROCESS_DATA = ROOT/'preprocess_data'
     PROCESS_DATA = ROOT/'processed_data'
     DEPENDENCY=ROOT/'dependency'
 
