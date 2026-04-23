@@ -46,7 +46,7 @@ def run(
     rounds = min(60,k * 15) if args.rounds == 0 else args.rounds
     batch = min(1024,128*k)
     batch = min(batch, data_size)
-    rounds = math.ceil(batch*rounds*15/data_size) if args.rounds == 0 else args.rounds
+    rounds = math.ceil(batch*rounds*15/data_size)
     current = datetime.now().strftime("%Y_%m_%d_%H_%M");
     print(
         f'params:\n'
