@@ -51,7 +51,7 @@ def run(
     batch = min(batch, data_size)
     total_batch = 15 if args.total_batch == 0 else args.total_batch
     minibatch_rounds = (rounds//2) if args.minibatch_rounds == 0 else args.minibatch_rounds
-    epsilon = 1/(np.log(data_size/batch)+1e-9)
+    epsilon = 1/max(np.log(data_size/batch),1)
     current_time = datetime.now().strftime("%Y_%m_%d_%H_%M")
     print(
         f'params:\n'
