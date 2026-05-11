@@ -47,8 +47,7 @@ def run(
     batch = min(1024,128*k) if args.batch == 0 else args.batch
     batch = min(batch, data_size)
     current = datetime.now().strftime("%Y_%m_%d_%H_%M")
-    rounds*=5
-    batch*=3
+    rounds*=15
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'
