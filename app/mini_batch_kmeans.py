@@ -63,7 +63,7 @@ def run(
         max_iter=rounds,
         tol=args.tol,
     )
-    for index in tqdm(range(iteration), desc=f'iteration'):
+    for index in tqdm(range(iteration), desc='iteration'):
         start_time = time.time()
         kmeans.fit(data)
         centers = kmeans.cluster_centers_
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         )
     result_dir = SETTING.RESULT / dataset_name/'mini_batch_kmeans'
     result_dir.mkdir(parents=True, exist_ok=True)
-    file_name = f'data.xlsx'
+    file_name = 'data.xlsx'
     previous_result = None
     if (result_dir/file_name).exists():
         previous_result = pd.read_excel(result_dir/file_name)

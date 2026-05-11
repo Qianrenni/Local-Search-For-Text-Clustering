@@ -5,12 +5,11 @@ import numpy as np
 import torch
 import random
 import json
-import math
 import pandas as pd
 from datetime import datetime
 from app.terminate_mini_batch import PaperMiniBatchKMeans
 from app.eval import ClusterEvaluator
-from app.util import cost, get_epsilon,get_labels
+from app.util import cost,get_labels
 import time
 from tqdm import tqdm
 def _args():
@@ -45,7 +44,7 @@ def run(
     rounds = min(60,k*15) if args.rounds == 0 else args.rounds
     batch = min(1024,128*k) if args.batch == 0 else args.batch
     batch = min(batch, data_size)
-    current = datetime.now().strftime("%Y_%m_%d_%H_%M");
+    current = datetime.now().strftime("%Y_%m_%d_%H_%M")
     # epsilon = get_epsilon(k, data_size,dimension, rounds*15*batch)
     # batch = math.ceil(math.pow(dimension/epsilon,2)*np.log(k*data_size*dimension/epsilon))
     # rounds = math.ceil(dimension/epsilon)
@@ -126,7 +125,7 @@ if __name__ == '__main__':
         )
     result_dir = SETTING.RESULT / dataset_name/'terminate_mini_batch_kmeans'
     result_dir.mkdir(parents=True, exist_ok=True)
-    file_name = f'data.xlsx'
+    file_name = 'data.xlsx'
     previous_result = None
     if (result_dir/file_name).exists():
         previous_result = pd.read_excel(result_dir/file_name)
