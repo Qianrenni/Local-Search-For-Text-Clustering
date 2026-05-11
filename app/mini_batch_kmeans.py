@@ -46,7 +46,9 @@ def run(
     rounds = min(60,k*15) if args.rounds == 0 else args.rounds
     batch = min(1024,128*k) if args.batch == 0 else args.batch
     batch = min(batch, data_size)
-    current = datetime.now().strftime("%Y_%m_%d_%H_%M");
+    current = datetime.now().strftime("%Y_%m_%d_%H_%M")
+    rounds*=5
+    batch*=3
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'
@@ -58,7 +60,7 @@ def run(
     kmeans = MiniBatchKMeans(
         n_clusters=k,
         batch_size=batch,
-        max_iter=rounds*15,
+        max_iter=rounds,
         tol=args.tol,
     )
     for index in tqdm(range(iteration), desc=f'iteration'):

@@ -46,22 +46,24 @@ def run(
     batch = min(1024,128*k) if args.batch == 0 else args.batch
     batch = min(batch, data_size)
     current = datetime.now().strftime("%Y_%m_%d_%H_%M");
-    epsilon = get_epsilon(k, data_size,dimension, rounds*15*batch)
-    batch = math.ceil(math.pow(dimension/epsilon,2)*np.log(k*data_size*dimension/epsilon))
-    rounds = math.ceil(dimension/epsilon)
+    # epsilon = get_epsilon(k, data_size,dimension, rounds*15*batch)
+    # batch = math.ceil(math.pow(dimension/epsilon,2)*np.log(k*data_size*dimension/epsilon))
+    # rounds = math.ceil(dimension/epsilon)
+    rounds*=5
+    batch*=3
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'
         f'  clusters: {k}\n'
         f'  rounds: {rounds}\n'
         f'  batch size: {batch}\n'
-        f'  epsilon: {epsilon}\n'
+        # f'  epsilon: {epsilon}\n'
     )
     kmeans = PaperMiniBatchKMeans(
         n_clusters=k,
         batch_size=batch,
         max_iter=rounds,
-        epsilon=epsilon
+        epsilon=args.tol
     )
 
     for index in tqdm(range(iteration), desc='iteration'):
