@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+import math
 def l2_distance(
         x: np.ndarray,
         centers: np.ndarray
@@ -28,6 +28,7 @@ def l2_distance(
 def sample(
     sequence: np.ndarray,
     size: int,
+    is_replace: bool = False
 ):
     """
     从sequence中随机采样size个元素
@@ -41,7 +42,7 @@ def sample(
         indices = np.random.choice(sequence.shape[0], size=size, replace=True)
         result = sequence[indices]
         return result.squeeze()
-    indices = np.random.choice(sequence.shape[0],size=size,replace=False)
+    indices = np.random.choice(sequence.shape[0],size=size,replace=is_replace)
     result =sequence[indices]
     return result.squeeze()
 
@@ -102,3 +103,37 @@ def k_nearest_neighbors(x, centers, k=1):
     distance = torch.tensor(l2_distance(x, centers))
     dist, indices = torch.topk(distance, k, dim=1, largest=False)
     return dist.numpy(), indices.numpy()
+
+
+def get_epsilon(k:int,n:int,d:int,c:int,threshold=1e-4):
+    """
+    计算epsilon
+    Args:
+        k (int): 中心点数量
+        n (int): 数据数量
+        d (int): 数据维度
+        c (int): 常数
+        threshold (float): 阈值
+    Returns:
+        epsilon (float): 贪心值
+    """
+    def f(epsilon: float):
+        return math.pow(d/epsilon,3)*math.log(k*n*d/epsilon)
+    left = right=1.0
+    while f(left) > c:
+        left*=2
+    while f(right) < c:
+        right/=2
+    epsilon = (left + right) / 2
+    while left < right:
+        epsilon = (left + right) / 2
+        current = f(epsilon)
+        if abs(current - c) <= threshold:
+            return epsilon
+        if current > c:
+            left = epsilon
+        else:
+            right = epsilon
+    return epsilon
+
+

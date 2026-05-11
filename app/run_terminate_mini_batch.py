@@ -1,0 +1,189 @@
+from pathlib import Path
+
+from config import SETTING
+import numpy as np
+import torch
+import random
+import json
+import math
+import pandas as pd
+from datetime import datetime
+from app.terminate_mini_batch import PaperMiniBatchKMeans
+from app.eval import ClusterEvaluator
+from app.util import cost, get_epsilon,get_labels
+import time
+from tqdm import tqdm
+def _args():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='ag_news', help='Dataset name')
+    parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
+    parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
+    parser.add_argument('-t','--tol', type=float, default=0.0001, help='Tolerance for convergence')
+    parser.add_argument('-b', '--batch', type=int, default=0, help='Batch size')
+    parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
+    parser.add_argument('-a','--all',type=int,default=0)
+    parser.add_argument('-n','--norm',type=int,default=0)
+    parser.add_argument('-k','--clusters',type=int,default=-1)
+    args = parser.parse_args()
+    return args
+
+def run(
+    model_name:str,
+    dataset_name:str,
+    data_path:Path,
+    y:np.ndarray,
+    args,
+    labels,
+    result:pd.DataFrame,
+    save_path:Path
+):
+    data = np.load(data_path)
+    data_size, dimension = data.shape
+    k = len(labels) if args.clusters==-1 else args.clusters 
+    dataset = f'{dataset_name}{data.shape}'
+    rounds = min(60,k*15) if args.rounds == 0 else args.rounds
+    batch = min(1024,128*k) if args.batch == 0 else args.batch
+    batch = min(batch, data_size)
+    current = datetime.now().strftime("%Y_%m_%d_%H_%M");
+    epsilon = get_epsilon(k, data_size,dimension, rounds*15*batch)
+    batch = math.ceil(math.pow(dimension/epsilon,2)*np.log(k*data_size*dimension/epsilon))
+    rounds = math.ceil(dimension/epsilon)
+    print(
+        f'params:\n'
+        f'  data_size{data.shape}\n'
+        f'  clusters: {k}\n'
+        f'  rounds: {rounds}\n'
+        f'  batch size: {batch}\n'
+        f'  epsilon: {epsilon}\n'
+    )
+    kmeans = PaperMiniBatchKMeans(
+        n_clusters=k,
+        batch_size=batch,
+        max_iter=rounds,
+        epsilon=epsilon
+    )
+
+    for index in tqdm(range(iteration), desc='iteration'):
+        start_time = time.time()
+        kmeans.fit(data)
+        centers = kmeans.cluster_centers_
+        total_time = time.time() - start_time
+        loss = cost(data, centers)
+        labels = get_labels(data, centers)
+        ari, nmi, acc, f1s, rs, ps = ClusterEvaluator.external_metrics(y, labels)
+        ch, db = ClusterEvaluator.internal_metrics(data, labels)
+        result.loc[(dataset,current ,model_name, data_path.name.split('_')[0], k,rounds,batch, args.tol, index)] = [ari, nmi, db, ch, acc, f1s, rs, ps,loss, total_time]
+        result.to_excel(save_path)
+
+if __name__ == '__main__':
+    np.random.seed(SETTING.SEED)
+    random.seed(SETTING.SEED)
+    torch.manual_seed(SETTING.SEED)
+    torch.cuda.manual_seed(SETTING.SEED)
+    args = _args()
+    dataset_name:str = args.dataset
+    dataset_dir =SETTING.PROCESS_DATA / f'{dataset_name}' 
+    iteration = args.iteration
+    result = pd.DataFrame(
+            columns=[
+                'dataset',
+                'datetime',
+                'model',
+                'norm',
+                'clusters',
+                'rounds',
+                'batch',
+                'tol',
+                'iteration',
+                'ARI',
+                'NMI',
+                'DB',
+                'CH',
+                'ACC',
+                'F1S',
+                'RS',
+                'PS',
+                'cost', 
+                'time'
+            ]
+        )
+    result.set_index(
+            [
+                'dataset',
+                'datetime',
+                'model' ,
+                'norm', 
+                'clusters', 
+                'rounds', 
+                'batch',
+                'tol',
+                'iteration'
+            ],
+            inplace=True
+        )
+    result_dir = SETTING.RESULT / dataset_name/'terminate_mini_batch_kmeans'
+    result_dir.mkdir(parents=True, exist_ok=True)
+    file_name = f'data.xlsx'
+    previous_result = None
+    if (result_dir/file_name).exists():
+        previous_result = pd.read_excel(result_dir/file_name)
+    if args.all==1:
+        for model in dataset_dir.iterdir():
+            model_name = model.name
+            labels = json.loads((model/'labels.json').read_text())
+            y = np.load(model/'y.npy')
+            norm_embedding_path = model/'norm_embedding.npy'
+            if norm_embedding_path.exists():
+                run(
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    data_path=norm_embedding_path,
+                    y=y,
+                    args=args,
+                    labels=labels,
+                    result=result,
+                    save_path=result_dir/file_name
+                )
+            unnormlized_embedding_path = model/'unnormlized_embedding.npy'
+            if unnormlized_embedding_path.exists():
+                run(
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    data_path=unnormlized_embedding_path,
+                    y=y,
+                    labels=labels,
+                    args=args,
+                    result=result,
+                    save_path=result_dir/file_name
+                )
+    else:
+        model_dir = dataset_dir/f'{args.model}'
+        if model_dir.exists():
+            labels = json.loads((model_dir/'labels.json').read_text())
+            y = np.load(model_dir/'y.npy')
+            data_path = model_dir/f'{'norm' if args.norm else 'unnormlized'}_embedding.npy'
+            run(
+                model_name=model_dir.name,
+                dataset_name=dataset_name,
+                data_path=data_path,
+                y=y,
+                labels=labels,
+                args=args,
+                result=result,
+                save_path=result_dir/file_name
+            )
+    result.reset_index(inplace=True)
+    if previous_result is not None:
+        result = pd.concat([previous_result, result])
+    result.to_excel(result_dir / file_name,index=False)
+    arrgregate_df = result.groupby(['dataset',
+                                    'datetime',
+                                    'model',
+                                    'norm',
+                                    'clusters',
+                                    'rounds',
+                                    'batch',
+                                    'tol',
+                                ]).agg(['mean', 'std']).reset_index()
+    arrgregate_df.to_excel(result_dir / f'aggregate_{file_name}')
