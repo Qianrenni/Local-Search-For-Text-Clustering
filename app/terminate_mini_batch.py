@@ -12,10 +12,10 @@ class PaperMiniBatchKMeans:
 
     def __init__(
         self,
-        n_clusters: int = 8,
-        batch_size: int = 1024,
-        epsilon: float = 1e-4,
-        max_iter: int = 2000,
+        n_clusters: int | None = None,
+        batch_size: int | None = None,
+        epsilon: float | None = None,
+        max_iter: int | None = None,
         random_state: int | None = None,
     ):
         """
@@ -43,7 +43,7 @@ class PaperMiniBatchKMeans:
     def fit(self, X: np.ndarray):
         centers = self._init_centers(X)
         for i in range(self.max_iter):
-            # 1. 均匀随机采样批次（允许重复采样，符合论文假设）
+             # 1. 均匀随机采样批次（允许重复采样，符合论文假设）
             batch = sample(X, self.batch_size, is_replace=True)
 
             # 2. 计算更新前的批次目标函数值 f_B(C_i)

@@ -48,15 +48,14 @@ def run(
     # epsilon = get_epsilon(k, data_size,dimension, rounds*15*batch)
     # batch = math.ceil(math.pow(dimension/epsilon,2)*np.log(k*data_size*dimension/epsilon))
     # rounds = math.ceil(dimension/epsilon)
-    rounds*=5
-    batch*=3
+    rounds*=15
     print(
         f'params:\n'
         f'  data_size{data.shape}\n'
         f'  clusters: {k}\n'
         f'  rounds: {rounds}\n'
         f'  batch size: {batch}\n'
-        # f'  epsilon: {epsilon}\n'
+        f'  epsilon: {args.tol}\n'
     )
     kmeans = PaperMiniBatchKMeans(
         n_clusters=k,
