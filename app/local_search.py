@@ -59,11 +59,11 @@ class LocalSearch(object):
             centers (n_clusters, n_features): 最终中心点
         """
         # cost改进比例
-        ratio = 1
+        ratio = 0
         center_nums = centers.shape[0]
         for j in range(rounds):
             # 如果占比大于1+threshold，则增加batch
-            if (j > 0) and (ratio > (1 + threshold)):
+            if ratio > 1:
                 batch = math.ceil(batch * ratio)
 
             # 随机选择 batch 个样本
@@ -92,8 +92,9 @@ class LocalSearch(object):
             # 新中心点的cost
             cost_new_centers = distance_new.sum()
             new_ratio = cost_old_centers / cost_new_centers
+            improvement = cost_old_centers - cost_new_centers
             # 收敛判断：如果改进很小就提前返回
-            if new_ratio < (1 + threshold):
+            if  improvement < threshold:
                 return centers_now if (new_ratio > 1) else centers
             if new_ratio > 1:
                 # 更新改进比例
@@ -150,7 +151,6 @@ class LocalSearch(object):
             s_std = np.zeros(self.n_clusters_)
             std_history = np.zeros(self.n_clusters_)
             flag = 0
-            delta = 1 / sample_size
             while (used_count < total_counts and len(solution) > 1):
                 solution_np = np.array(solution, dtype=int)
                 batch_points = sample(x, self.batch_)
