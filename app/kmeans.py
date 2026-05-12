@@ -21,7 +21,7 @@ def _args():
     parser.add_argument('-d', '--dataset', type=str, default='ag_news', help='Dataset name')
     parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
     parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
-    parser.add_argument('-t','--tol', type=float, default=0.0001, help='Tolerance for convergence')
+    parser.add_argument('-t','--tol', type=float, default=0.005, help='Tolerance for convergence')
     parser.add_argument('-m','--model',type=str,default='all-MiniLM-L6-v2')
     parser.add_argument('-a','--all',type=int,default=0)
     parser.add_argument('-n','--norm',type=int,default=0)

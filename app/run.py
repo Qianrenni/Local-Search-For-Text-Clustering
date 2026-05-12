@@ -21,6 +21,7 @@ def _args():
     parser.add_argument('-i','--iteration', type=int, default=30, help='Number of iterations')
     parser.add_argument('-r', '--rounds', type=int, default=0, help='Number of rounds')
     parser.add_argument('-t', '--trans', type=int, default=0, help='Number of transformations')
+    parser.add_argument('-th', '--threshold', type=float, default=0.005, help='Threshold value')
     parser.add_argument('-b', '--batch', type=int, default=0, help='Batch size')
     parser.add_argument('-tb', '--total_batch', type=int, default=0, help='Total batch size')
     parser.add_argument('-mbr', '--minibatch_rounds', type=int, default=0, help='Minibatch rounds')
@@ -64,6 +65,7 @@ def run(
         f'  total_batch: {total_batch}\n'
         f'  minibatch_rounds: {minibatch_rounds}\n'
         f'  epsilon: {epsilon}\n'
+        f'  threshold: {args.threshold}\n'
     )
     local_search = LocalSearch(
         n_clusters=k,
@@ -72,6 +74,7 @@ def run(
         batch=batch,
         total_batch=total_batch,
         minibatchround=minibatch_rounds,
+        threshold=args.threshold,
         epsilon=epsilon
     )
     for index in tqdm(range(iteration), desc=f'iteration'):
