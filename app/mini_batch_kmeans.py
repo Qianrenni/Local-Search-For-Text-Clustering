@@ -50,7 +50,8 @@ def run(
     rounds*=15
     print(
         f'params:\n'
-        f'  data_size{data.shape}\n'
+        f'  data_path: {data_path}\n'
+        f'  data_size: {data.shape}\n'
         f'  clusters: {k}\n'
         f'  rounds: {rounds}\n'
         f'  batch size: {batch}\n'
