@@ -1,4 +1,5 @@
 ## 目录
+- [项目概述](#项目概述)
 - [环境配置](#环境配置)
 - [数据集准备](#数据集准备)
 - [模型下载](#模型下载)
@@ -6,6 +7,45 @@
 - [运行聚类算法](#运行聚类算法)
 - [评估指标](#评估指标)
 - [结果分析](#结果分析)
+- [完整复现流程示例](#完整复现流程示例)
+- [常见问题](#常见问题)
+- [联系方式](#联系方式)
+
+# 文本聚类算法研究项目
+
+![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)
+
+本项目实现了多种文本聚类算法，包括传统的KMeans、MiniBatchKMeans以及论文提出的Local Search算法。项目支持多种预训练语言模型进行文本嵌入，并在多个标准数据集上进行了实验验证。
+
+## 项目概述
+
+### 主要特性
+- **多算法支持**: KMeans, MiniBatchKMeans, Local Search (论文核心算法)
+- **多模型支持**: 支持多种Sentence Transformer模型进行文本嵌入
+- **多数据集**: 支持20+个中英文数据集
+- **全面评估**: 提供外部指标(ARI, NMI, ACC等)和内部指标(CH, DB, Cost等)
+- **可扩展性**: 易于添加新数据集和新算法
+- **可复现性**: 固定随机种子，确保实验结果可复现
+
+### 项目结构
+```
+code/
+├── app/                    # 核心算法实现
+│   ├── kmeans.py          # KMeans算法
+│   ├── mini_batch_kmeans.py # MiniBatchKMeans算法
+│   ├── local_search.py    # Local Search算法核心
+│   ├── run.py             # Local Search运行脚本
+│   ├── text.py            # 文本嵌入生成
+│   └── eval.py            # 评估指标计算
+├── data/                   # 原始数据目录
+├── preprocess_data/        # 预处理后数据
+├── processed_data/         # 嵌入向量存储
+├── result/                 # 实验结果
+├── dependency/             # 模型依赖
+└── config.py              # 配置文件
+```
 
 ## 环境配置
 
@@ -21,6 +61,12 @@ pip install -r requirements.txt
 - `torch`: 深度学习框架
 - `tqdm`: 进度条显示
 - `openpyxl`: Excel文件读写
+- `modelscope`: 模型库支持（可选）
+
+### 系统要求
+- Python 3.7+
+- CUDA 11.8+ (可选，用于GPU加速)
+- 至少8GB RAM (推荐16GB以上)
 
 ## 数据集准备
 
@@ -245,6 +291,15 @@ python app/mini_batch_kmeans.py -d ag_news -k 4 -r 50 -t 0.0001 -b 512
 - 其他参数与KMeans相同
 
 ### 3. Local Search 算法（论文核心算法）
+
+Local Search算法是本项目的核心创新点，通过局部搜索策略优化聚类中心，通常能获得比传统KMeans更好的聚类质量。
+
+**算法原理：**
+- 使用MiniBatch KMeans进行初始化
+- 通过局部搜索策略迭代优化聚类中心
+- 引入bandit机制平衡探索与利用
+- 支持自适应批次大小和变换次数
+
 ```bash
 # 基本用法
 python app/run.py -d ag_news
@@ -269,17 +324,33 @@ python app/run.py -d ag_news \
 ```
 
 **参数说明：**
-- `-r, --rounds`: 搜索轮数
-- `-t, --trans`: 变换次数
-- `-b, --batch`: 批次大小
-- `-tb, --total_batch`: 总批次大小
-- `-mbr, --minibatch_rounds`: Minibatch轮数
+- `-r, --rounds`: 搜索轮数（默认: min(60, k*15)）
+- `-t, --trans`: 变换次数（默认: ceil(sqrt(rounds)) + k）
+- `-b, --batch`: 批次大小（默认: min(1024, 128*k)）
+- `-tb, --total_batch`: 总批次大小（默认: 15）
+- `-mbr, --minibatch_rounds`: Minibatch轮数（默认: rounds//2）
+- `-th, --threshold`: 阈值参数（默认: 0.005）
 - `-n, --norm`: 使用归一化嵌入
+
+### 4. Terminate MiniBatch KMeans 算法
+```bash
+# 基本用法
+python app/run_terminate_mini_batch.py -d ag_news
+
+# 自定义参数
+python app/run_terminate_mini_batch.py -d ag_news -r 50 -b 256
+```
+
+**参数说明：**
+- `-r, --rounds`: 迭代轮数
+- `-b, --batch`: 批次大小
+- 其他参数与MiniBatchKMeans类似
 
 ### 算法选择建议
 - **KMeans**: 基准算法，适合中小规模数据集
 - **MiniBatchKMeans**: 适合大规模数据集，速度更快
 - **Local Search**: 论文提出的改进算法，通常能获得更好的聚类质量
+- **Terminate MiniBatch KMeans**: 带终止条件的MiniBatch KMeans变体
 
 ## 评估指标
 
@@ -336,6 +407,12 @@ python app/run.py -d ag_news \
 - `ARI/NMI/DB/CH/ACC/F1S/RS/PS`: 评估指标
 - `cost`: 聚类损失
 - `time`: 运行时间
+
+### 结果可视化
+您可以使用以下工具对结果进行分析：
+- Excel内置图表功能
+- Python的matplotlib/seaborn库
+- Jupyter Notebook进行交互式分析
 
 ## 完整复现流程示例
 
@@ -401,6 +478,7 @@ python app/run.py -d ag_news -m all-MiniLM-L6-v2 -i 30
 1. 将原始数据放入 `data/{dataset_name}/` 目录
 2. 创建预处理脚本，生成 `preprocess_data/{dataset_name}/train.xlsx`
 3. 确保Excel文件包含 `text` 和 `label` 两列
+4. 运行 `python app/text.py -d {dataset_name}` 生成嵌入向量
 
 ### Q2: GPU加速
 代码会自动检测并使用GPU（如果可用）。确保已安装CUDA版本的PyTorch：
@@ -412,12 +490,65 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 - 减小批处理大小 (`-b` 参数)
 - 使用更小的嵌入模型（如 `all-MiniLM-L6-v2`）
 - 对大数据集使用MiniBatchKMeans
+- 考虑使用均值池化方式处理长文本 (`-t 0`)
 
 ### Q4: 复现性
 所有随机种子已固定为 `1314`（在 `config.py` 中定义），确保实验可复现。
 
+### Q5: 如何处理中文数据集？
+1. 使用支持中文的模型，如 `gte-base-zh`
+2. 确保数据集编码为UTF-8
+3. 参考 `clue-tnews` 或 `THUCNewsText` 的处理方式
+
+### Q6: 如何比较不同算法的效果？
+1. 在同一数据集上运行所有算法
+2. 查看 `result/{dataset_name}/{algorithm}/aggregate_data.xlsx`
+3. 比较ARI、NMI、ACC等外部指标
+4. 比较CH、DB、Cost等内部指标
+5. 对比运行时间
+
 本项目仅供学术研究使用。
+
+## 引用
+
+如果您在研究中使用了本项目，请引用相关论文：
+
+```bibtex
+@inproceedings{paper,
+  title={Your Paper Title},
+  author={Author Name},
+  booktitle={Conference Name},
+  year={2026}
+}
+```
+
+## 许可证
+
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+
+## 致谢
+
+感谢以下开源项目的支持：
+- [Sentence Transformers](https://www.sbert.net/)
+- [Hugging Face Datasets](https://huggingface.co/datasets)
+- [Scikit-learn](https://scikit-learn.org/)
 
 ## 联系方式
 
 如有问题，请提交Issue或联系项目维护者。
+
+## 贡献指南
+
+欢迎为本项目做出贡献！如果您想参与开发：
+
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启一个 Pull Request
+
+### 开发建议
+- 保持代码风格一致
+- 添加必要的注释和文档
+- 编写测试用例
+- 更新README文档
