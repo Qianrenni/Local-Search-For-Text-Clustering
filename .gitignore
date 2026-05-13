@@ -1,6 +1,3 @@
-.lingma
-.pytest_cache/
-__pycache__/
 data/
 dependency/
 result/
@@ -14,3 +11,6 @@ temp*.*
 result*
 md/
 *data/
+.*/
+_*/
+back*/
