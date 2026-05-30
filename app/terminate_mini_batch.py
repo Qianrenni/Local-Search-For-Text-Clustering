@@ -37,8 +37,37 @@ class PaperMiniBatchKMeans:
         # 目标函数值
         self.inertia_ = None
 
-    def _init_centers(self, X: np.ndarray) -> np.ndarray:
-        return sample(X, self.n_clusters)
+    def _init_centers(self, x: np.ndarray) -> np.ndarray:
+        if self.random_state is not None:
+            np.random.seed(self.random_state)
+        
+        n_samples, n_features = x.shape
+        n_clusters = self.n_clusters
+        
+        centers = np.empty((n_clusters, n_features), dtype=x.dtype)
+        
+        # 随机选择第一个中心点
+        idx = np.random.randint(0, n_samples)
+        centers[0] = x[idx]
+        
+        for c in range(1, n_clusters):
+            # 计算所有样本到当前所有中心点的距离平方
+            # 使用广播机制: x shape (n, d), centers[:c] shape (c, d)
+            # 结果 shape: (n, c)
+            diffs = x[:, np.newaxis, :] - centers[:c][np.newaxis, :, :]
+            dists_sq = np.sum(diffs ** 2, axis=2)  # shape (n, c)
+            
+            # 取每个样本到最近中心点的距离平方
+            min_dists_sq = np.min(dists_sq, axis=1)  # shape (n,)
+            
+            # 归一化为概率
+            probs = min_dists_sq / np.sum(min_dists_sq)
+            
+            # 按概率选择下一个中心点
+            idx = np.random.choice(n_samples, p=probs)
+            centers[c] = x[idx]
+        
+        return centers
 
     def fit(self, X: np.ndarray):
         centers = self._init_centers(X)
