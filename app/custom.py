@@ -1,5 +1,4 @@
 import numpy as np
-import time
 from typing import Optional
 from app.util import sample, get_labels, cost
 
@@ -39,7 +38,7 @@ class KMeans:
         indices = np.random.choice(n_samples, self.n_clusters, replace=False)
         return x[indices].copy()
 
-    def fit(self, x: np.ndarray) -> 'KMeansCustom':
+    def fit(self, x: np.ndarray):
         """
         训练模型
         Args:
@@ -129,7 +128,7 @@ class MiniBatchKMeans:
         indices = np.random.choice(n_samples, self.n_clusters, replace=False)
         return x[indices].copy()
 
-    def fit(self, x: np.ndarray) -> 'MiniBatchKMeansCustom':
+    def fit(self, x: np.ndarray):
         """
         训练模型
         """

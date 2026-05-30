@@ -1,6 +1,6 @@
 import numpy as np
 
-from app.util import l2_distance, sample
+from app.util import k_nearest_neighbors, l2_distance, sample
 
 
 class PaperMiniBatchKMeans:
@@ -47,13 +47,9 @@ class PaperMiniBatchKMeans:
             batch = sample(X, self.batch_size, is_replace=True)
 
             # 2. 计算更新前的批次目标函数值 f_B(C_i)
-            dist_before = l2_distance(batch, centers)
-            min_dist_before = np.min(dist_before, axis=1)
-            cost_before = np.sum(min_dist_before)
 
-            # 3. 分配批次样本至最近中心
-            labels_batch = np.argmin(dist_before, axis=1)
-
+            min_dist_before,labels_batch = k_nearest_neighbors(batch,centers)
+            cost_before = np.mean(min_dist_before)
             # 4. 依据论文定理14的学习率与更新规则计算新中心
             new_centers = centers.copy()
             for j in range(self.n_clusters):
@@ -69,7 +65,7 @@ class PaperMiniBatchKMeans:
             # 5. 计算更新后的批次目标函数值 f_B(C_{i+1})
             dist_after = l2_distance(batch, new_centers)
             min_dist_after = np.min(dist_after, axis=1)
-            cost_after = np.sum(min_dist_after)
+            cost_after = np.mean(min_dist_after)
 
             # 6. 论文定义的停止条件：局部改进量低于 ε 即终止
             improvement = cost_before - cost_after
