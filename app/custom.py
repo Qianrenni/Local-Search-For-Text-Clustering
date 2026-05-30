@@ -24,43 +24,35 @@ class KMeans:
         self.labels_ = None
         self.inertia_ = None  # 即 cost
         self.n_iter_ = 0
-
+   
     def _init_centers(self, x: np.ndarray) -> np.ndarray:
-        """
-        K-Means++ 初始化或随机初始化
-        这里使用简单的随机采样初始化，如需 K-Means++ 可扩展
-        """
         if self.random_state is not None:
             np.random.seed(self.random_state)
         
-    def _init_centers(self, x: np.ndarray) -> np.ndarray:
-        if self.random_state is not None:
-            np.random.seed(self.random_state)
         n_samples, n_features = x.shape
         n_clusters = self.n_clusters
         
-        # 1. 随机选择第一个中心点
         centers = np.empty((n_clusters, n_features), dtype=x.dtype)
+        
+        # 随机选择第一个中心点
         idx = np.random.randint(0, n_samples)
         centers[0] = x[idx]
         
-        # 2. 依次选择剩下的 k-1 个中心点
         for c in range(1, n_clusters):
-            # 计算每个样本点到已选中心点的最近距离的平方
-            # distances: shape (n_samples,)
-            # 对于每个样本，计算它到所有已选中心点的距离，取最小值
-            dists = l2_distance(x, centers[:c])
-            min_dists = np.min(dists, axis=0)  # shape (n_samples,)
+            # 计算所有样本到当前所有中心点的距离平方
+            # 使用广播机制: x shape (n, d), centers[:c] shape (c, d)
+            # 结果 shape: (n, c)
+            diffs = x[:, np.newaxis, :] - centers[:c][np.newaxis, :, :]
+            dists_sq = np.sum(diffs ** 2, axis=2)  # shape (n, c)
             
-            # 3. 根据距离平方的比例作为概率选择下一个中心点
-            probs = min_dists / np.sum(min_dists)
+            # 取每个样本到最近中心点的距离平方
+            min_dists_sq = np.min(dists_sq, axis=1)  # shape (n,)
             
-            # 累积概率分布
-            cumprobs = np.cumsum(probs)
+            # 归一化为概率
+            probs = min_dists_sq / np.sum(min_dists_sq)
             
-            # 4. 随机选择一个点（按概率加权）
-            r = np.random.rand()
-            idx = np.searchsorted(cumprobs, r)
+            # 按概率选择下一个中心点
+            idx = np.random.choice(n_samples, p=probs)
             centers[c] = x[idx]
         
         return centers
@@ -149,31 +141,31 @@ class MiniBatchKMeans:
     def _init_centers(self, x: np.ndarray) -> np.ndarray:
         if self.random_state is not None:
             np.random.seed(self.random_state)
+        
         n_samples, n_features = x.shape
         n_clusters = self.n_clusters
         
-        # 1. 随机选择第一个中心点
         centers = np.empty((n_clusters, n_features), dtype=x.dtype)
+        
+        # 随机选择第一个中心点
         idx = np.random.randint(0, n_samples)
         centers[0] = x[idx]
         
-        # 2. 依次选择剩下的 k-1 个中心点
         for c in range(1, n_clusters):
-            # 计算每个样本点到已选中心点的最近距离的平方
-            # distances: shape (n_samples,)
-            # 对于每个样本，计算它到所有已选中心点的距离，取最小值
-            dists = l2_distance(x, centers[:c])
-            min_dists = np.min(dists, axis=0)  # shape (n_samples,)
+            # 计算所有样本到当前所有中心点的距离平方
+            # 使用广播机制: x shape (n, d), centers[:c] shape (c, d)
+            # 结果 shape: (n, c)
+            diffs = x[:, np.newaxis, :] - centers[:c][np.newaxis, :, :]
+            dists_sq = np.sum(diffs ** 2, axis=2)  # shape (n, c)
             
-            # 3. 根据距离平方的比例作为概率选择下一个中心点
-            probs = min_dists / np.sum(min_dists)
+            # 取每个样本到最近中心点的距离平方
+            min_dists_sq = np.min(dists_sq, axis=1)  # shape (n,)
             
-            # 累积概率分布
-            cumprobs = np.cumsum(probs)
+            # 归一化为概率
+            probs = min_dists_sq / np.sum(min_dists_sq)
             
-            # 4. 随机选择一个点（按概率加权）
-            r = np.random.rand()
-            idx = np.searchsorted(cumprobs, r)
+            # 按概率选择下一个中心点
+            idx = np.random.choice(n_samples, p=probs)
             centers[c] = x[idx]
         
         return centers
