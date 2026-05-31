@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional
-from app.util import sample, get_labels, cost
+from app.util import l2_distance, sample, get_labels, cost
 
 class KMeans:
     """
@@ -33,11 +33,17 @@ class KMeans:
         if self.random_state is not None:
             np.random.seed(self.random_state)
         
-        n_samples = x.shape[0]
-        # 随机选择 n_clusters 个不重复的索引
-        indices = np.random.choice(n_samples, self.n_clusters, replace=False)
-        return x[indices].copy()
-
+        n_samples,n_features = x.shape
+        centers = np.empty((self.n_clusters,n_features),dtype=x.dtype)
+        centers[0] = sample(x,1)
+        for c in range(1,self.n_clusters):
+            dists = l2_distance(x,centers[:c])
+            if c ==1:
+                dists = dists[:, None]
+            min_dists = np.min(dists, axis=1)
+            probs = min_dists / np.sum(min_dists)
+            centers[c] = sample(x, 1, probs=probs)
+        return centers
     def fit(self, x: np.ndarray):
         """
         训练模型
@@ -120,13 +126,24 @@ class MiniBatchKMeans:
         self.n_iter_ = 0
 
     def _init_centers(self, x: np.ndarray) -> np.ndarray:
+        """
+        K-Means++ 初始化或随机初始化
+        这里使用简单的随机采样初始化，如需 K-Means++ 可扩展
+        """
         if self.random_state is not None:
             np.random.seed(self.random_state)
-        n_samples = x.shape[0]
-        # 初始中心点可以从第一个 batch 中选取，或者全局随机
-        # 这里采用全局随机采样，通常效果更好
-        indices = np.random.choice(n_samples, self.n_clusters, replace=False)
-        return x[indices].copy()
+        
+        n_samples,n_features = x.shape
+        centers = np.empty((self.n_clusters,n_features),dtype=x.dtype)
+        centers[0] = sample(x,1)
+        for c in range(1,self.n_clusters):
+            dists = l2_distance(x,centers[:c])
+            if c ==1:
+                dists = dists[:, None]
+            min_dists = np.min(dists, axis=1)
+            probs = min_dists / np.sum(min_dists)
+            centers[c] = sample(x, 1, probs=probs)
+        return centers
 
     def fit(self, x: np.ndarray):
         """
